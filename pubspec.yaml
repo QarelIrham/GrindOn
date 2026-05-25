@@ -1,0 +1,63 @@
+name: daily_development
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  uuid: ^4.5.1
+  google_fonts: ^6.3.2
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.4
+  image_picker: ^1.1.2
+  firebase_storage: ^12.3.4
+  audioplayers: ^6.1.0
+  share_plus: ^10.1.0
+  screenshot: ^3.0.0
+  path_provider: ^2.1.4
+  flutter_local_notifications: ^20.1.0
+  lottie: ^3.3.1
+  timezone: ^0.10.1
+  shared_preferences: ^2.3.4
+  provider: ^6.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+  flutter_native_splash: ^2.4.7
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - lib/assets/audio/
+    - lib/assets/Body1Set/
+    - lib/assets/Head/
+    - lib/assets/armor/
+    - lib/assets/pants/
+    - lib/assets/pet/
+    - lib/assets/wallpaper/
+    - lib/assets/logo/
+
+flutter_native_splash:
+  color: "#4C1D95"
+  image: "lib/assets/logo/Logo_GrindOn.png"
+  android: true
+  ios: true
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "lib/assets/logo/Logo_GrindOn.png"
+  adaptive_icon_background: "#1E1B4B" # Warna ungu gelap untuk background
+  adaptive_icon_foreground: "lib/assets/logo/Logo_GrindOn.png"

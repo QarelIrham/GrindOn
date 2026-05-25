@@ -1,0 +1,6 @@
+{
+    "dart.flutterHotReloadOnSave": true,
+    "dart.previewHotReloadOnSaveWatcher": true,
+    "dart.flutterShowReloadBanner": false,
+    "editor.formatOnSave": true
+}

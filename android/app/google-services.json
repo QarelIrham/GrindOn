@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "994050956464",
+    "project_id": "daily-development-b320f",
+    "storage_bucket": "daily-development-b320f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:994050956464:android:c876f1f3f31017ba506f75",
+        "android_client_info": {
+          "package_name": "com.example.daily_development"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwPNhyEvgIV0BFBMqOPIvzEQ9_2w7ndr4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,726 @@
+// ============================================================
+// APP LOCALE — Single source of truth untuk semua string UI
+// Mendukung: Bahasa Indonesia (id) & English (en)
+// ============================================================
+
+enum AppLang { id, en }
+
+class L {
+  final AppLang lang;
+  const L(this.lang);
+
+  bool get isEn => lang == AppLang.en;
+
+  // ── Generic helper ─────────────────────────────────────
+  String get(String id, String en) => isEn ? en : id;
+
+  // ════════════════════════════════════════════════════════
+  //  NAV & TABS
+  // ════════════════════════════════════════════════════════
+  String get navHome          => get('Beranda', 'Home');
+  String get navDaily         => get('Harian', 'Daily');
+  String get navStats         => get('Statistik', 'Stats');
+  String get navProfile       => get('Profil', 'Profile');
+
+  // ════════════════════════════════════════════════════════
+  //  KATEGORI
+  // ════════════════════════════════════════════════════════
+  String get catStrength      => get('Kekuatan', 'Strength');
+  String get catDefense       => get('Pertahanan', 'Defense');
+  String get catIntelligence  => get('Kecerdasan', 'Intelligence');
+  String get catAgility       => get('Kelincahan', 'Agility');
+  String get catVitality      => get('Vitalitas', 'Vitality');
+
+  String catName(String key) {
+    switch (key) {
+      case 'Strength':    return catStrength;
+      case 'Defense':     return catDefense;
+      case 'Intelligence':return catIntelligence;
+      case 'Agility':     return catAgility;
+      case 'Vitality':    return catVitality;
+      default:            return key;
+    }
+  }
+
+  String get catDescStrength    => get('Fisik & Olahraga',       'Physical & Sports');
+  String get catDescDefense     => get('Mental & Refleksi',       'Mental & Reflection');
+  String get catDescIntelligence=> get('Belajar & Pengetahuan',   'Learning & Knowledge');
+  String get catDescAgility     => get('Kecepatan & Kegesitan',   'Speed & Agility');
+  String get catDescVitality    => get('Kesehatan & Tidur',       'Health & Sleep');
+
+  String catDesc(String key) {
+    switch (key) {
+      case 'Strength':    return catDescStrength;
+      case 'Defense':     return catDescDefense;
+      case 'Intelligence':return catDescIntelligence;
+      case 'Agility':     return catDescAgility;
+      case 'Vitality':    return catDescVitality;
+      default:            return key;
+    }
+  }
+
+  // Category Benefits
+  List<String> catBenefits(String key) {
+    switch (key) {
+      case 'Strength':
+        return isEn ? [
+          'Stronger & more energetic body',
+          'Increased muscle mass',
+          'Boosted confidence',
+          'Better metabolism',
+        ] : [
+          'Tubuh lebih kuat & bertenaga',
+          'Massa otot meningkat',
+          'Kepercayaan diri naik',
+          'Metabolisme lebih baik',
+        ];
+      case 'Defense':
+        return isEn ? [
+          'More stable mental state',
+          'Less prone to burnout',
+          'Better emotional management',
+          'Improved focus & concentration',
+        ] : [
+          'Mental lebih stabil',
+          'Tidak mudah burnout',
+          'Pengelolaan emosi lebih baik',
+          'Fokus & konsentrasi meningkat',
+        ];
+      case 'Intelligence':
+        return isEn ? [
+          'Faster learning ability',
+          'Sharper problem solving',
+          'Developing technical skills',
+          'Increased creativity',
+        ] : [
+          'Kemampuan belajar lebih cepat',
+          'Problem solving lebih tajam',
+          'Skill teknis berkembang',
+          'Kreativitas meningkat',
+        ];
+      case 'Vitality':
+        return isEn ? [
+          'Stable energy throughout the day',
+          'Faster recovery',
+          'Strong body immunity',
+          'Always positive mood',
+        ] : [
+          'Energi stabil sepanjang hari',
+          'Pemulihan lebih cepat',
+          'Imunitas tubuh kuat',
+          'Mood selalu positif',
+        ];
+      case 'Agility':
+        return isEn ? [
+          'Increased stamina & endurance',
+          'More agile body',
+          'Healthy cardiovascular',
+          'Improved reflexes & speed',
+        ] : [
+          'Stamina & daya tahan naik',
+          'Tubuh lebih gesit',
+          'Kardiovaskular sehat',
+          'Refleks & kecepatan meningkat',
+        ];
+      default:
+        return [];
+    }
+  }
+
+  // Category Attribute Bonus
+  String catAttrBonus(String key) {
+    switch (key) {
+      case 'Strength':    return isEn ? 'STR +XP every task completed' : 'STR +XP setiap task selesai';
+      case 'Defense':     return isEn ? 'DEF +XP every task completed' : 'DEF +XP setiap task selesai';
+      case 'Intelligence':return isEn ? 'INT +XP every task completed' : 'INT +XP setiap task selesai';
+      case 'Vitality':    return isEn ? 'VIT +XP & Energy +10 every task completed' : 'VIT +XP & Energy +10 setiap task selesai';
+      case 'Agility':     return isEn ? 'AGI +XP every task completed' : 'AGI +XP setiap task selesai';
+      default:            return '';
+    }
+  }
+
+  // Category Detail Screen
+  String get catDetailInfo              => get('Info', 'Info');
+  String get catDetailRecommendations   => get('Rekomendasi', 'Recommendations');
+  String get catDetailActiveTasks       => get('Task Aktif', 'Active Tasks');
+  String get catDetailAbout             => get('Tentang', 'About');
+  String get catDetailBenefits          => get('Manfaat', 'Benefits');
+  String get catDetailAttributeBonus    => get('Attribute Bonus', 'Attribute Bonus');
+  String get catDetailAddTask           => get('+ Tambah', '+ Add');
+  String catDetailNoActiveTasks(String category) => isEn 
+    ? 'No active tasks in $category'
+    : 'Tidak ada task aktif di $category';
+  String get catDetailOpenRecommendations => get('Buka tab Rekomendasi untuk menambah task', 'Open Recommendations tab to add tasks');
+  String get catDetailCursedTask        => get('⚠️ CURSED  •  +25% Durasi', '⚠️ CURSED  •  +25% Duration');
+  String get catDetailTimerRunning      => get(' Jalan', ' Running');
+  String get catDetailStart             => get(' Start', ' Start');
+  String get catDetailDone              => get(' Selesai', ' Done');
+
+  // ════════════════════════════════════════════════════════
+  //  CLASS NAMES (RPG)
+  // ════════════════════════════════════════════════════════
+  String get classWarrior   => get('PRAJURIT', 'WARRIOR');
+  String get classPaladin   => get('PALADIN',  'PALADIN');
+  String get classArchmage  => get('ARCHMAGE', 'ARCHMAGE');
+  String get classAssassin  => get('ASSASSIN', 'ASSASSIN');
+  String get classDruid     => get('DRUID',    'DRUID');
+
+  String className(String key) {
+    switch (key) {
+      case 'Strength':    return classWarrior;
+      case 'Defense':     return classPaladin;
+      case 'Intelligence':return classArchmage;
+      case 'Agility':     return classAssassin;
+      case 'Vitality':    return classDruid;
+      default:            return key;
+    }
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  DIFFICULTY
+  // ════════════════════════════════════════════════════════
+  List<String> get difficultyLabels => isEn
+      ? ['Easy', 'Normal', 'Hard', 'Extreme']
+      : ['Mudah', 'Normal', 'Sulit', 'Ekstrem'];
+
+  String diffLabel(int index) => difficultyLabels[index.clamp(0, 3)];
+
+  // ════════════════════════════════════════════════════════
+  //  FREQUENCY
+  // ════════════════════════════════════════════════════════
+  String get freqDaily        => get('Harian',    'Daily');
+  String get freqWeekly       => get('Mingguan',  'Weekly');
+  String get freqDailyDesc    => get('Reset tiap hari',  'Resets each day');
+  String get freqWeeklyDesc   => get('Deadline 7 hari',  '7-day deadline');
+
+  // ════════════════════════════════════════════════════════
+  //  PROOF TYPES
+  // ════════════════════════════════════════════════════════
+  String get proofNone        => get('Tidak Ada', 'None');
+  String get proofPhoto       => get('Foto',      'Photo');
+  String get proofText        => get('Tulisan',   'Text');
+
+  String proofLabel(String type) {
+    switch (type) {
+      case 'photo': return proofPhoto;
+      case 'text':  return proofText;
+      default:      return proofNone;
+    }
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  HOME SCREEN
+  // ════════════════════════════════════════════════════════
+  String get homeGreetingMorning  => get('Selamat Pagi',  'Good Morning');
+  String get homeGreetingAfternoon=> get('Selamat Siang', 'Good Afternoon');
+  String get homeGreetingEvening  => get('Selamat Malam', 'Good Evening');
+  String get homeDailyProgress    => get('Progress Harian',  'Daily Progress');
+  String get homeQuestBoard       => get('Papan Quest',       'Quest Board');
+  String get homeAccept           => get('Terima',            'Accept');
+  String get homeViewAll          => get('Lihat Semua',       'View All');
+  String get homeRecentActivity   => get('Aktivitas Terkini', 'Recent Activity');
+  String get homeMotivation       => get('Jangan menyerah, Hero!', 'Keep going, Hero!');
+  String get homeDanger           => get('⚠️ HP Kritis! Segera selesaikan misimu!', '⚠️ Critical HP! Complete your missions now!');
+  String get homeTasksDone        => get('selesai', 'done');
+  String get homeTasksOf          => get('dari',   'of');
+  String get homeNoTasks          => get('Belum ada tugas hari ini', 'No tasks today');
+
+  // ════════════════════════════════════════════════════════
+  //  DAILY SCREEN
+  // ════════════════════════════════════════════════════════
+  String get dailyTitle           => get('Quest Aktif',     'Active Quests');
+  String get dailyEmpty           => get('Tidak ada quest aktif hari ini.', 'No active quests today.');
+  String get dailyStart           => get('Mulai',    'Start');
+  String get dailyPause           => get('Jeda',     'Pause');
+  String get dailyResume          => get('Lanjut',   'Resume');
+  String get dailyComplete        => get('Selesai',  'Complete');
+  String get dailyFailed          => get('Gagal',    'Failed');
+  String get dailyPending         => get('Pending',  'Pending');
+  String get dailyRunning         => get('Berjalan', 'Running');
+  String get dailyCompleted       => get('Selesai',  'Completed');
+  String get dailySubmitProof     => get('Upload Bukti',    'Upload Proof');
+  String get dailyAddQuest        => get('Tambah Quest',    'Add Quest');
+  String get dailyFilterAll       => get('Semua',   'All');
+  String get dailyFilterActive    => get('Aktif',   'Active');
+  String get dailyFilterDone      => get('Selesai', 'Done');
+
+  // ════════════════════════════════════════════════════════
+  //  STATISTIC SCREEN
+  // ════════════════════════════════════════════════════════
+  String get statsTabPersonal     => get('Statistik Saya',    'My Stats');
+  String get statsTabLeaderboard  => get('Peringkat Global',  'Global Ranking');
+  String get statsLevel           => get('Level',     'Level');
+  String get statsRank            => get('Peringkat', 'Rank');
+  String get statsStreak          => get('Streak',    'Streak');
+  String get statsLongestStreak   => get('Streak Terpanjang', 'Longest Streak');
+  String get statsTotalDone       => get('Total Selesai',     'Total Done');
+  String get statsTotalFailed     => get('Total Gagal',       'Total Failed');
+  String get statsGold            => get('Gold',  'Gold');
+  String get statsHP              => get('HP',    'HP');
+  String get statsShare           => get('Bagikan Kartu',     'Share Card');
+  String get statsHistory         => get('Lihat Riwayat',     'View History');
+  String get statsAttributes      => get('Atribut',       'Attributes');
+  String get statsRankRoadmap     => get('Peta Peringkat', 'Rank Roadmap');
+  String get statsDays            => get('hari', 'days');
+  String get statsLeaderboard     => get('Hall of Champions', 'Hall of Champions');
+  String get statsYou             => get('(Kamu)',    '(You)');
+  String get statsViewProfile     => get('Lihat Profil', 'View Profile');
+
+  // Dynamic title
+  String dynamicTitle(String key) {
+    if (isEn) return key; // EN uses the original English keys
+    switch (key) {
+      case 'The Beginner':       return 'Si Pemula';
+      case 'The Iron Warrior':   return 'Prajurit Besi';
+      case 'The Iron Tank':      return 'Tameng Besi';
+      case 'The Wise Strategist':return 'Ahli Strategi';
+      case 'The Undying':        return 'Sang Abadi';
+      case 'The Swift Shadow':   return 'Bayangan Kilat';
+      case 'The Adventurer':     return 'Si Petualang';
+      default:                   return key;
+    }
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  PROFILE / SETTINGS
+  // ════════════════════════════════════════════════════════
+  String get profileTitle         => get('Profil',       'Profile');
+  String get profileSettings      => get('Pengaturan',   'Settings');
+  String get profileLogout        => get('Keluar',       'Logout');
+  String get profileEditName      => get('Ubah Nama',    'Edit Name');
+  String get profileChangeAvatar  => get('Ganti Avatar', 'Change Avatar');
+  String get profileSound         => get('Efek Suara',   'Sound Effects');
+  String get profileSoundOn       => get('Aktif',        'On');
+  String get profileSoundOff      => get('Mati',         'Off');
+  String get profileResetTutorial => get('Reset Panduan Misi',   'Reset Tutorial Guide');
+  String get profileLanguage      => get('Bahasa / Language',    'Language / Bahasa');
+  String get profileLangID        => get('🇮🇩 Indonesia',         '🇮🇩 Indonesia');
+  String get profileLangEN        => get('🇬🇧 English',           '🇬🇧 English');
+  String get profileCharacter     => get('Karakter',             'Character');
+  String get profileTabBadges     => get('Badges',               'Badges');
+  String get profileTabAvatar     => get('Avatar',               'Avatar');
+  String get profileTabItems      => get('Items',                'Items');
+  String profileInsufficientCoins(int price) =>
+      get('Koin tidak cukup! Butuh $price koin.', 'Not enough coins! Need $price coins.');
+  String get profileInsufficientGold =>
+      get('Gold tidak cukup!', 'Not enough Gold!');
+  String get profileHpRestored =>
+      get('HP dipulihkan! (+30 HP)', 'HP restored! (+30 HP)');
+  String get profileXpBonusActive =>
+      get('Bonus XP 2x Aktif selama 1 jam!', '2x XP bonus active for 1 hour!');
+
+  // ════════════════════════════════════════════════════════
+  //  ADD TASK SCREEN
+  // ════════════════════════════════════════════════════════
+  String get addTaskTitle         => get('Tambah Task',           'Add Task');
+  String get addTaskTitleField    => get('Judul Task',            'Task Title');
+  String get addTaskTitleHint     => get('Contoh: Push up 30x',  'Example: 30 push-ups');
+  String get addTaskNotes         => get('Catatan (opsional)',    'Notes (optional)');
+  String get addTaskNotesHint     => get('Tambahkan catatan...',  'Add notes...');
+  String get addTaskCategory      => get('Kategori',              'Category');
+  String get addTaskDifficulty    => get('Difficulty',            'Difficulty');
+  String get addTaskFrequency     => get('Frekuensi',             'Frequency');
+  String get addTaskDuration      => get('Durasi Timer',          'Timer Duration');
+  String get addTaskDurationNone  => get('No Timer',              'No Timer');
+  String get addTaskDurationHint  => get('Klik untuk atur durasi pengerjaan', 'Tap to set task duration');
+  String get addTaskProof         => get('Bukti Penyelesaian',    'Completion Proof');
+  String get addTaskProofHint     => get('Diperlukan setelah task selesai', 'Required after task completion');
+  String get addTaskDeadline      => get('Deadline',              'Deadline');
+  String get addTaskSubmit        => get('Buat Task',             'Create Task');
+  String get addTaskSuccess       => get('Task ditambahkan!',     'Task created!');
+
+  // Quest ideas (per category)
+  List<String> questIdeas(String category) {
+    if (isEn) {
+      switch (category) {
+        case 'Strength':    return ['20 push-ups', 'Lift weights 15m', 'Morning run 2km', 'Plank 2 min'];
+        case 'Intelligence':return ['Read 10 pages', 'Code 30 min', 'DuoLingo 1 lesson', 'Write journal'];
+        case 'Defense':     return ['Clean room', 'Tidy up desk', 'Wash dishes', 'Make bed'];
+        case 'Vitality':    return ['Drink 2L water', 'Sleep by 11pm', 'Eat fruit', 'Walk 10k steps'];
+        case 'Agility':     return ['Morning stretch', 'Yoga 10 min', 'Leisurely walk 15m', 'Take the stairs'];
+        default:            return [];
+      }
+    } else {
+      switch (category) {
+        case 'Strength':    return ['Push up 20x', 'Angkat beban 15m', 'Lari pagi 2km', 'Plank 2 menit'];
+        case 'Intelligence':return ['Baca buku 10 hal', 'Belajar coding 30m', 'DuoLingo 1 lesson', 'Nulis jurnal'];
+        case 'Defense':     return ['Bersihkan kamar', 'Rapikan meja', 'Cuci piring', 'Merapikan kasur'];
+        case 'Vitality':    return ['Minum air 2L', 'Tidur jam 11 malam', 'Makan buah', 'Jalan kaki 10rb langkah'];
+        case 'Agility':     return ['Stretching pagi', 'Yoga 10 menit', 'Jalan santai 15m', 'Naik tangga'];
+        default:            return [];
+      }
+    }
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  AVATAR SHOP
+  // ════════════════════════════════════════════════════════
+  String get shopTitle            => get('Arsenal',   'Arsenal');
+  String get shopBuy              => get('Beli',      'Buy');
+  String get shopEquip            => get('Pakai',     'Equip');
+  String get shopEquipped         => get('Dipakai',   'Equipped');
+  String get shopLocked           => get('Terkunci',  'Locked');
+  String get shopNotEnoughGold    => get('Gold tidak cukup!', 'Not enough Gold!');
+  String get shopBuySuccess       => get('Item berhasil dibeli!', 'Item purchased!');
+  String get shopCosmetic         => get('Hanya Kosmetik', 'Cosmetic Only');
+
+  // Tier labels
+  String get tierNovice   => get('Novice',  'Novice');
+  String get tierVeteran  => get('Veteran', 'Veteran');
+  String get tierElite    => get('Elite',   'Elite');
+  String get tierMythic   => get('Mythic',  'Mythic');
+
+  // Category tabs (shop)
+  String shopCategoryLabel(String cat) {
+    switch (cat) {
+      case 'Head':        return get('Kepala',      'Head');
+      case 'Body':        return get('Baju',        'Body');
+      case 'Pants':       return get('Celana',      'Pants');
+      case 'Pet':         return get('Peliharaan',  'Pet');
+      case 'Wallpaper':   return get('Latar',       'Wallpaper');
+      case 'Body 1 Set':  return get('Kostum',      'Costume');
+      default:            return cat;
+    }
+  }
+
+  // Item names (EN translation for items that have Indonesian names)
+  String itemName(String itemId, String fallbackName) {
+    const Map<String, String> enNames = {
+      'none_head':              'No Headgear',
+      'head_default_login_male1':'Male Style 1',
+      'head_default_login_male2':'Male Style 2',
+      'head_default_login_female1':'Female Style 1',
+      'head_default_login_female2':'Female Style 2',
+      'none_body':              'No Top',
+      'outfit_cardigan_blue':   'Blue Cardigan',
+      'outfit_student':         'School Uniform',
+      'none_pants':             'No Bottoms',
+      'pants_jeans':            'Jeans',
+      'skirt_student':          'School Skirt',
+      'none_wallpaper':         'No Wallpaper',
+      'wallpaper_hutan':        'Magic Forest',
+      'none_skin':              'No Costume',
+      'default_skinboy':        'Boy Default',
+      'default_skingirl':       'Girl Default',
+      'armor_druid':            'Druid Robe',
+      'none_pet':               'No Pet',
+      // Most EN names are already English — no translation needed
+    };
+
+    if (isEn) return enNames[itemId] ?? fallbackName;
+    // Indonesian names that need explicit translation:
+    const Map<String, String> idNames = {
+      'none_head':              'Tanpa Topi',
+      'head_default_login_male1':'Cowok Gaya 1',
+      'head_default_login_male2':'Cowok Gaya 2',
+      'head_default_login_female1':'Cewek Gaya 1',
+      'head_default_login_female2':'Cewek Gaya 2',
+      'none_body':              'Tanpa Baju',
+      'outfit_cardigan_blue':   'Kardigan Biru',
+      'outfit_student':         'Baju Sekolah',
+      'none_pants':             'Tanpa Celana',
+      'pants_jeans':            'Celana Jeans',
+      'skirt_student':          'Rok Sekolah',
+      'none_wallpaper':         'Tanpa Wallpaper',
+      'none_skin':              'Tanpa Kostum',
+      'none_pet':               'Tidak Ada',
+      'default_skinboy':        'Baju Cowok',
+      'default_skingirl':       'Baju Cewek',
+    };
+    return idNames[itemId] ?? fallbackName;
+  }
+
+  // Passive description
+  String passiveDesc(double gold, double xp, double hp) {
+    List<String> parts = [];
+    if (gold > 0) parts.add('+${(gold * 100).toInt()}% ${get('Gold', 'Gold')}');
+    if (xp > 0)   parts.add('+${(xp * 100).toInt()}% XP');
+    if (hp > 0)   parts.add('+${hp.toInt()} ${get('Max HP', 'Max HP')}');
+    return parts.isEmpty ? shopCosmetic : parts.join(' & ');
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  GENERAL BUTTONS & MESSAGES
+  // ════════════════════════════════════════════════════════
+  String get btnSave      => get('Simpan',   'Save');
+  String get btnCancel    => get('Batal',    'Cancel');
+  String get btnClose     => get('Tutup',    'Close');
+  String get btnConfirm   => get('Konfirmasi','Confirm');
+  String get btnOk        => get('Oke',      'OK');
+  String get btnNext      => get('Lanjut →', 'Next →');
+  String get btnGotIt     => get('Mengerti ✓', 'Got it ✓');
+  String get btnSkip      => get('Lewati',   'Skip');
+  String get btnApply     => get('Terapkan', 'Apply');
+  String get btnReset     => get('Reset',    'Reset');
+
+  String get msgLoading   => get('Memuat...', 'Loading...');
+  String get msgError     => get('Terjadi kesalahan', 'Something went wrong');
+  String get msgSuccess   => get('Berhasil!', 'Success!');
+  String get msgNotLoggedIn => get('Belum login', 'Not logged in');
+
+  // ════════════════════════════════════════════════════════
+  //  AUTH SCREENS
+  // ════════════════════════════════════════════════════════
+  String get authLogin        => get('Masuk',         'Sign In');
+  String get authRegister     => get('Daftar',        'Register');
+  String get authEmail        => get('Email',          'Email');
+  String get authPassword     => get('Kata Sandi',    'Password');
+  String get authName         => get('Nama Lengkap',  'Full Name');
+  String get authUsername     => get('Username',      'Username');
+  String get authLoginBtn     => get('Masuk',         'Sign In');
+  String get authRegisterBtn  => get('Buat Akun',     'Create Account');
+  String get authNoAccount    => get('Belum punya akun?', 'No account?');
+  String get authHaveAccount  => get('Sudah punya akun?', 'Already have an account?');
+
+  // ════════════════════════════════════════════════════════
+  //  ONBOARDING
+  // ════════════════════════════════════════════════════════
+  String get onboardingTitle  => get('Selamat Datang, Hero!', 'Welcome, Hero!');
+
+  // ════════════════════════════════════════════════════════
+  //  CHARACTER CREATION
+  // ════════════════════════════════════════════════════════
+  String get charCreateSubtitle   => get('Buat Karaktermu',        'Create Your Character');
+  String get charSelectGender     => get('Pilih Gender',           'Select Gender');
+  String get charGenderHint       => get('Bisa diubah kapan saja', 'Can be changed anytime');
+  String get charMale             => get('Cowok',                  'Male');
+  String get charFemale           => get('Cewek',                  'Female');
+  String get charSelectHeadBtn    => get('Pilih Karakter →',         'Select Character →');
+  String get charSelectStyle      => get('Pilih Gaya',             'Choose Style');
+  String get charHead             => get('Karakter',                 'Character');
+  String get charHeadStyleSection => get('PILIH KARAKTER',           'CHOOSE CHARACTER');
+  String get charStartAdventure   => get('Mulai Petualangan! ⚔️', 'Start Adventure! ⚔️');
+  String charStyleLabel(int n)    => get('Gaya $n',                'Style $n');
+  String charSaveFailed(String e) => get('Gagal menyimpan: $e',   'Failed to save: $e');
+
+  // ════════════════════════════════════════════════════════
+  //  HISTORY SCREEN
+  // ════════════════════════════════════════════════════════
+  String get historyTitle     => get('Riwayat Quest',  'Quest History');
+  String get historyReviewTitle => get('Riwayat & Ulasan', 'History & Review');
+  String get historyEmpty     => get('Belum ada riwayat.', 'No history yet.');
+  String get historyEmptyTasks => get('Belum ada history task yang selesai', 'No completed tasks yet');
+  String get historyCompleted => get('Diselesaikan',   'Completed');
+  String get historyDone      => get('Selesai',        'Done');
+  String get historyFailed    => get('Gagal',          'Failed');
+  String get historyNotesLabel => get('Catatan / Jurnal:', 'Notes / Journal:');
+  String get historyPhotoUnavailable =>
+      get('Foto tidak dapat dimuat\n(Firebase Storage belum aktif)',
+          'Photo cannot be loaded\n(Firebase Storage not active)');
+
+  List<String> get monthShort => isEn
+      ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+      : ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+
+  // ════════════════════════════════════════════════════════
+  //  FOCUS TIMER
+  // ════════════════════════════════════════════════════════
+  String get timerTitle       => get('Fokus Timer',  'Focus Timer');
+  String get timerStart       => get('Mulai',        'Start');
+  String get timerPause       => get('Jeda',         'Pause');
+  String get timerResume      => get('Lanjut',       'Resume');
+  String get timerStop        => get('Berhenti',     'Stop');
+  String get timerComplete    => get('Selesai!',     'Complete!');
+  String get timerFreeMode    => get('Mode Bebas',   'Free Mode');
+  String get timerFocusMode   => get('Focus Mode',   'Focus Mode');
+  String get timerSetManual   => get('Set Waktu Manual', 'Set Time Manually');
+  String get timerMinutes     => get('Menit',        'Minutes');
+  String get timerSeconds     => get('Detik',        'Seconds');
+  String get timerContinue    => get('Lanjut',       'Continue');
+  String get timerGiveUpTitle => get('Menyerah?',    'Give Up?');
+  String get timerGiveUpMsg   =>
+      get('Task akan ditandai GAGAL. Penalti HP & Gold akan dikenakan.',
+          'Task will be marked FAILED. HP & Gold penalties will apply.');
+  String get timerYesGiveUp   => get('Ya, Menyerah', 'Yes, Give Up');
+  String get timerGiveUpBtn   => get('Menyerah',     'Give Up');
+  String get timerPaused      => get('Dijeda',       'Paused');
+  String get timerRemaining   => get('Tersisa',      'Remaining');
+  String get timerWorkTask    => get('Kerjakan taskmu', 'Work on your task');
+  String get timerPressDone   =>
+      get('Tekan Selesai saat sudah dikerjakan', 'Press Done when finished');
+  String get timerDoneBtn     => get('Selesai ✓',    'Done ✓');
+  String get timerFailedSnack =>
+      get('Task gagal! -10 HP sebagai penalti.', 'Task failed! -10 HP penalty.');
+
+  // ════════════════════════════════════════════════════════
+  //  PROOF SCREEN
+  // ════════════════════════════════════════════════════════
+  String get proofTitle           => get('Proof of Work', 'Proof of Work');
+  String get proofUploadPhoto     => get('Upload Foto Bukti', 'Upload Proof Photo');
+  String get proofPhotoHint       =>
+      get('Foto harus menunjukkan kamu sudah menyelesaikan task',
+          'Photo must show you completed the task');
+  String get proofTapCamera       => get('Tap untuk buka kamera', 'Tap to open camera');
+  String get proofWriteSummary    => get('Tulis Ringkasan', 'Write Summary');
+  String get proofSummaryHint     =>
+      get('Jelaskan apa yang kamu pelajari atau lakukan',
+          'Describe what you learned or did');
+  String get proofSummaryFieldHint =>
+      get('Tulis ringkasan kegiatanmu di sini...', 'Write your activity summary here...');
+  String get proofVerifying       =>
+      get('Memverifikasi penyelesaian Quest...', 'Verifying Quest completion...');
+  String get proofVerifyingHint   =>
+      get('Harap tunggu sebentar, sistem sedang mencatat progres RPG-mu.',
+          'Please wait, the system is recording your RPG progress.');
+  String get proofSubmitBtn       => get('Submit Bukti & Selesai', 'Submit Proof & Finish');
+  String get proofNeedPhoto       => get('Upload foto bukti dulu!', 'Upload proof photo first!');
+  String get proofNeedText        => get('Isi ringkasan/catatan dulu!', 'Fill in summary/notes first!');
+  String proofSaveFailed(String e) =>
+      get('Gagal menyimpan bukti: $e', 'Failed to save proof: $e');
+  String get proofQuestComplete   => get('QUEST COMPLETE', 'QUEST COMPLETE');
+  String get proofShareText       =>
+      get('Saya baru saja menyelesaikan task: ', 'I just completed a task: ');
+  String get proofShareHashtags   => get(' ⚔️🔥 #DailyRPG', ' ⚔️🔥 #DailyRPG');
+
+  // ════════════════════════════════════════════════════════
+  //  NOTIFICATIONS
+  // ════════════════════════════════════════════════════════
+  String notifPendingTitle(int count) => isEn
+      ? '⚠️ HERO ALERT!'
+      : '⚠️ PERINGATAN HERO!';
+  String notifPendingBody(int count) => isEn
+      ? 'You have $count unfinished tasks! Your character\'s life is in danger!'
+      : 'Kamu punya $count tugas yang belum selesai! Nyawa karaktermu dalam bahaya jika malas!';
+
+  // ════════════════════════════════════════════════════════
+  //  TUTORIAL STEPS (xqvx The Creator)
+  // ════════════════════════════════════════════════════════
+  List<String> get tutorialHome => isEn ? [
+    'Greetings, Hero! I am **xqvx The Creator**, your spiritual guide in the RPG Task World. Let me show you how to adventure!',
+    'In the top bar, watch your **HP, XP, Level, and Gold**. Never let your HP reach 0 due to daily mission failures!',
+    'Below that is the **Tavern Quest Board**. Task categories are grouped by physical/mental attributes. Open a category and tap **Accept** to take a mission!',
+  ] : [
+    'Salam sejahtera, Hero! Aku adalah **xqvx The Creator**, pemandu spiritualmu di Dunia RPG Task. Mari kupandu caramu berpetualang!',
+    'Di bilah atas, perhatikan status **HP, XP, Level, dan Gold**. Jangan biarkan HP-mu menyentuh angka 0 karena kelalaian misi harian!',
+    'Di bawahnya terdapat **Tavern Quest Board**. Kategori tugas dikelompokkan berdasarkan atribut fisik/mental. Buka kategori dan klik **Accept** untuk mengambil misi!',
+  ];
+
+  List<String> get tutorialDaily => isEn ? [
+    'Welcome to the Quest Room! Here are your active missions you have accepted from the Tavern Board.',
+    'After completing a mission in real life, check the box here to claim your **XP** and **Gold** rewards!',
+  ] : [
+    'Selamat datang di Quest Room! Di sini adalah daftar misi aktifmu yang telah kamu ambil dari Tavern Board.',
+    'Setelah menyelesaikan misi di dunia nyata, centang kotak misinya di sini untuk mengklaim hadiah **XP** dan **Gold** yang melimpah!',
+  ];
+
+  List<String> get tutorialStats => isEn ? [
+    'This is the Hall of Records! Here you can monitor the growth of all five of your main attributes in depth.',
+    'Every completed mission will permanently increase the EXP of your physical/mental attribute based on its category!',
+  ] : [
+    'Ini adalah Hall of Records! Di sini kamu bisa memantau pertumbuhan kelima atribut utamamu secara mendalam.',
+    'Tiap misi yang berhasil diselesaikan akan secara permanen menaikkan EXP atribut fisik/mentalmu sesuai kategorinya!',
+  ];
+
+  List<String> get tutorialProfile => isEn ? [
+    'Welcome to the Arsenal! Here you can spend your hard-earned **Gold** on epic items!',
+    'Items like weapons, armor, and pets (Pets) will grant **permanent Passive Effects** that increase your Max HP or XP Multiplier!',
+  ] : [
+    'Selamat datang di Arsenal! Di sini kamu bisa membelanjakan **Gold** hasil jerih payahmu untuk membeli item epik!',
+    'Item seperti senjata, pelindung, dan hewan peliharaan (Pets) akan memberikan **Efek Pasif permanen** yang meningkatkan Max HP atau XP Multiplier karaktermu!',
+  ];
+
+  List<String> get tutorialAddTask => isEn ? [
+    'This is the **Mission Form**! Here you register new tasks into your Quest Log.',
+    'First, write the **Mission Title** — or select one of the quest ideas available below the title field.',
+    'Choose the **Category** that matches the attribute you want to improve: Strength, Defense, Intelligence, Vitality, or Agility.',
+    'Set your mission **Difficulty**. The higher it is, the more **XP & Gold** you earn upon success!',
+    'Set the **Proof of Completion**: Photo, Text, or none. Then set the deadline and tap **Create Task**. Good luck, Hero! ⚔️',
+  ] : [
+    'Ini adalah **Form Buat Misi**! Di sini kamu mendaftarkan tugas baru ke dalam Quest Log-mu.',
+    'Pertama, tuliskan **Judul Misi** — atau pilih salah satu ide quest yang sudah tersedia di bawah kolom judul.',
+    'Pilih **Kategori** sesuai atribut yang ingin kamu tingkatkan: Strength, Defense, Intelligence, Vitality, atau Agility.',
+    'Atur **Difficulty** misi-mu. Semakin tinggi, semakin besar **XP & Gold** yang kamu dapatkan setelah berhasil!',
+    'Tentukan **Bukti Penyelesaian**: Foto, Teks, atau tanpa bukti. Lalu atur deadline-nya, dan tekan **Buat Task**. Selamat berpetualang, Hero! ⚔️',
+  ];
+
+  List<String> get tutorialLeaderboard => isEn ? [
+    'Welcome to the **Hall of Champions**! Here you can see the global ranking of all Heroes fighting in the RPG Task World.',
+    'Your position on this board is determined by your character\'s **Level**. The more missions you complete, the higher your level and rank!',
+    'Watch **#1, #2, #3** — they are the legends! Defeat them by diligently completing your daily and weekly missions.',
+    'The **purple** highlighted row is your own position. Tap another hero\'s name to see their profile and avatar!',
+  ] : [
+    'Selamat datang di **Hall of Champions**! Di sini kamu bisa melihat peringkat global seluruh Hero yang bertarung di Dunia RPG Task.',
+    'Posisi di papan ini ditentukan oleh **Level** karaktermu. Semakin banyak misi yang kamu selesaikan, semakin tinggi levelmu dan posisimu!',
+    'Perhatikan **#1, #2, #3** — mereka adalah para legend! Kalahkan mereka dengan rajin menyelesaikan misi harian dan mingguanmu.',
+    'Baris yang disorot **ungu** adalah posisimu sendiri. Ketuk nama hero lain untuk melihat profil dan avatar mereka!',
+  ];
+
+  // Tutorial UI strings
+  String get tutorialSkip       => get('Lewati', 'Skip');
+  String get tutorialNext       => get('Lanjut →', 'Next →');
+  String get tutorialUnderstood => get('Mengerti ✓', 'Got it ✓');
+
+  // ════════════════════════════════════════════════════════
+  //  SUBCATEGORY NAMES (home quest board)
+  // ════════════════════════════════════════════════════════
+  String subCatName(String key) {
+    if (isEn) {
+      const Map<String, String> en = {
+        'Latihan Beban':      'Weight Training',
+        'Calisthenics':       'Calisthenics',
+        'Olahraga Air':       'Water Sports',
+        'Combat':             'Combat',
+        'Skill Teknis':       'Technical Skills',
+        'Literasi':           'Literacy',
+        'Bahasa':             'Language',
+        'Logika':             'Logic',
+        'Mindfulness':        'Mindfulness',
+        'Refleksi':           'Reflection',
+        'Stoicism':           'Stoicism',
+        'Digital Detox':      'Digital Detox',
+        'Cardio Lari':        'Cardio Run',
+        'Sport':              'Sports',
+        'Endurance':          'Endurance',
+        'HIIT':               'HIIT',
+        'Kualitas Tidur':     'Sleep Quality',
+        'Hidrasi':            'Hydration',
+        'Nutrisi':            'Nutrition',
+        'Recovery':           'Recovery',
+      };
+      return en[key] ?? key;
+    }
+    return key; // already Indonesian
+  }
+
+  // Quest names inside subcategories
+  String questName(String key) {
+    if (isEn) {
+      const Map<String, String> en = {
+        'Chest Day':              'Chest Day',
+        'Leg Day':                'Leg Day',
+        'Back Day':               'Back Day',
+        'Push-up 100x':           '100x Push-ups',
+        'Pull-up':                'Pull-ups',
+        'Dips':                   'Dips',
+        'Renang 30 Menit':        'Swim 30 Minutes',
+        'Boxing':                 'Boxing',
+        'Muay Thai':              'Muay Thai',
+        'Ngoding Flutter':        'Coding Flutter',
+        'Desain UI/UX':           'UI/UX Design',
+        'Baca Buku 10 Hal':       'Read 10 Pages',
+        'Ringkasan Artikel':      'Article Summary',
+        'Belajar 5 Kosakata Baru':'Learn 5 New Words',
+        'Latihan Grammar':        'Grammar Practice',
+        'Main Catur':             'Play Chess',
+        'Sudoku':                 'Sudoku',
+        'Meditasi 5 Menit':       'Meditate 5 Min',
+        'Journaling Malam':       'Evening Journaling',
+        'Latihan Kontrol Emosi':  'Emotion Control',
+        '1 Jam Tanpa HP':         '1 Hour No Phone',
+        'Jogging 20 Menit':       'Jog 20 Minutes',
+        'Lari 5K':                'Run 5K',
+        'Badminton':              'Badminton',
+        'Futsal':                 'Futsal',
+        'Bersepeda 30 Menit':     'Cycle 30 Minutes',
+        'HIIT 15 Menit':          'HIIT 15 Minutes',
+        'Tidur Sebelum Jam 10':   'Sleep Before 10pm',
+        'Minum 2L Air':           'Drink 2L Water',
+        'Makan Serat/Protein':    'Eat Fiber/Protein',
+        'Sarapan Sehat':          'Healthy Breakfast',
+        'Stretching/Yoga':        'Stretching/Yoga',
+      };
+      return en[key] ?? key;
+    }
+    return key;
+  }
+}
