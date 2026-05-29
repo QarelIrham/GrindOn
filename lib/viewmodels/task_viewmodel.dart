@@ -174,7 +174,7 @@ class TaskViewModel extends ChangeNotifier {
       final taskData = taskDoc.data()!;
 
       final baseXP = taskData[TaskSchema.xp] ?? 20;
-      final baseGold = taskData[TaskSchema.goldReward] ?? 5;
+      int baseGold = taskData[TaskSchema.goldReward] ?? 5;
       final category = taskData[TaskSchema.category] ?? 'Strength';
 
       // 2. Update Status Task di Firebase
@@ -208,6 +208,12 @@ class TaskViewModel extends ChangeNotifier {
       final xpBonusUntil = userData[UserSchema.xpBonusUntil] as Timestamp?;
       if (xpBonusUntil != null && xpBonusUntil.toDate().isAfter(DateTime.now())) {
         finalXp *= 2;
+      }
+
+      // B. Cek Item Aktif (Double Gold Scroll)
+      final goldBonusUntil = userData[UserSchema.goldBonusUntil] as Timestamp?;
+      if (goldBonusUntil != null && goldBonusUntil.toDate().isAfter(DateTime.now())) {
+        baseGold *= 2;
       }
 
       // B. Cek HP Penalty (Jika sekarat)

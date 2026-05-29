@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,9 +12,12 @@ import '../services/audio_service.dart';
 import '../services/locale_service.dart';
 import 'login_screen.dart';
 import 'focus_timer_screen.dart';
+import 'proof_screen.dart';
 import '../widget/celebration_overlay.dart';
 import '../theme/rpg_theme.dart';
 import '../theme/app_theme.dart';
+import '../widget/screen_header.dart';
+import '../widget/active_buffs_widget.dart';
 
 class DailyScreen extends StatefulWidget {
   const DailyScreen({super.key});
@@ -38,6 +42,8 @@ class _DailyScreenState extends State<DailyScreen> {
   String _rank = 'F';
   Map<String, String> _equippedItems = {};
   String? _baseBody;
+  Timestamp? _xpBonusUntil;
+  Timestamp? _goldBonusUntil;
 
   String _filterCat = 'Semua';
   String _filterStatus = 'Semua';
@@ -51,6 +57,7 @@ class _DailyScreenState extends State<DailyScreen> {
   static const String _filterDone = 'Selesai';
 
   final TextEditingController _searchCtrl = TextEditingController();
+  StreamSubscription<DocumentSnapshot>? _userSub;
 
   @override
   void initState() {
@@ -62,6 +69,7 @@ class _DailyScreenState extends State<DailyScreen> {
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _userSub?.cancel();
     super.dispose();
   }
 
@@ -69,12 +77,13 @@ class _DailyScreenState extends State<DailyScreen> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
     setState(() => _uid = uid);
-    final doc = await FirebaseFirestore.instance
+    _userSub = FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
-        .get();
-    if (!mounted || !doc.exists) return;
-    final d = doc.data()!;
+        .snapshots()
+        .listen((doc) {
+      if (!mounted || !doc.exists) return;
+      final d = doc.data()!;
     setState(() {
       _userName = d['name'] ?? 'User';
       _username = d['username'] ?? '';
@@ -83,12 +92,15 @@ class _DailyScreenState extends State<DailyScreen> {
       _hp = d[UserSchema.hp] ?? d['hp'] ?? 80;
       _maxHp = d[UserSchema.maxHp] ?? d['maxHp'] ?? 100;
       _coin = d[UserSchema.gold] ?? d['coin'] ?? 0;
-      _rank = _getRank(_level);
+      _rank = _getRank(d);
       if (d[UserSchema.equippedItems] != null) {
         _equippedItems = Map<String, String>.from(d[UserSchema.equippedItems]);
       }
       _baseBody = d[UserSchema.baseBody] as String?;
+      _xpBonusUntil = d[UserSchema.xpBonusUntil] as Timestamp?;
+      _goldBonusUntil = d[UserSchema.goldBonusUntil] as Timestamp?;
     });
+  });
   }
 
   // --- SISTEM HUKUMAN (PUNISHMENT SYSTEM) ---
@@ -148,7 +160,14 @@ class _DailyScreenState extends State<DailyScreen> {
     }
   }
 
-  String _getRank(int level) => RankSystem.calculateRank(level);
+  String _getRank(Map<String, dynamic> d) => RankSystem.calculateRank(
+    d['level'] ?? 1,
+    str: d[UserSchema.strengthXp] ?? 0,
+    def: d[UserSchema.defenseXp] ?? 0,
+    intl: d[UserSchema.intelligenceXp] ?? 0,
+    vit: d[UserSchema.vitalityXp] ?? 0,
+    agi: d[UserSchema.agilityXp] ?? 0,
+  );
 
   Color _rankColor(String rank) => Color(RankSystem.rankColorHex(rank));
 
@@ -231,7 +250,16 @@ class _DailyScreenState extends State<DailyScreen> {
         
         // Jika UI masih aktif, panggil overlay animasi konfeti dan tampilkan hadiahnya di tengah layar
         if (mounted) {
-          CelebrationOverlay.show(context, title: title, xp: reward, coin: goldReward);
+          CelebrationOverlay.show(
+            context,
+            title: title,
+            category: category,
+            xp: reward,
+            coin: goldReward,
+            userName: _userName,
+            level: _level,
+            equippedItems: _equippedItems,
+          );
         }
       }
     }
@@ -270,12 +298,12 @@ class _DailyScreenState extends State<DailyScreen> {
   // Bagian paling atas layar, menampilkan teks "Daily Task" atau kolom pencarian
   Widget _buildTopBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: _showSearch
-                ? TextField(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: _showSearch
+          ? Row(
+              children: [
+                Expanded(
+                  child: TextField(
                     controller: _searchCtrl,
                     autofocus: true,
                     style: GoogleFonts.nunito(color: AppColors.textPrimary),
@@ -285,43 +313,44 @@ class _DailyScreenState extends State<DailyScreen> {
                       hintStyle: GoogleFonts.nunito(color: AppColors.textPrimary.withValues(alpha: 0.38)),
                       border: InputBorder.none,
                     ),
-                  )
-                : Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Image.asset(
-                          'lib/assets/logo/Logo_GrindOn.png',
-                          height: 28,
-                          width: 28,
-                          errorBuilder: (context, error, stackTrace) => Icon(Icons.shield, color: AppColors.primary, size: 24),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'DAILY TASK',
-                          style: GoogleFonts.cinzel(
-                            color: AppColors.textPrimary,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2.0,
-                          ),
-                        ),
-                      ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _showSearch = false;
+                      _searchQuery = '';
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Icon(Icons.close, color: AppColors.textPrimary),
+                  ),
+                ),
+              ],
+            )
+          : ScreenHeader(
+              title: 'Daily Task',
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () => setState(() => _showSearch = true),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Icon(Icons.search, color: AppColors.textPrimary),
                     ),
-          ),
-          _iconBtn(
-            icon: _showSearch ? Icons.close_rounded : Icons.search_rounded,
-            onTap: () => setState(() {
-              _showSearch = !_showSearch;
-              if (!_showSearch) {
-                _searchCtrl.clear();
-                _searchQuery = '';
-              }
-            }),
-          ),
-          const SizedBox(width: 6),
-          _iconBtn(icon: Icons.filter_list_rounded, onTap: _showFilterSheet),
-        ],
-      ),
+                  ),
+                  GestureDetector(
+                    onTap: () => _showFilterSheet(),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Icon(Icons.filter_list_rounded, color: AppColors.textPrimary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 
@@ -330,41 +359,45 @@ class _DailyScreenState extends State<DailyScreen> {
   Widget _buildFreqToggle() {
     final l = context.l;
     final tabs = [_filterAll, 'daily', 'weekly'];
-    final labels = [l.dailyFilterAll, '⚔️ ${l.freqDaily}', '🏆 ${l.freqWeekly}'];
+    final labels = [l.dailyFilterAll, l.freqDaily, l.freqWeekly];
+    
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Row(
-        children: List.generate(3, (i) {
-          final active = _filterFreq == tabs[i];
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _filterFreq = tabs[i]),
-              child: AnimatedContainer(
-                duration: Duration(milliseconds: 150),
-                margin: EdgeInsets.only(right: i < 2 ? 8 : 0),
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: active ? AppColors.primary.withValues(alpha: 0.15) : AppColors.cardBackground,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: active ? AppColors.primary : AppColors.textPrimary.withValues(alpha: 0.12),
-                    width: active ? 1.5 : 1,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4), // Added top padding to prevent crowding
+      child: Container(
+        height: 42,
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        child: Row(
+          children: List.generate(3, (i) {
+            final active = _filterFreq == tabs[i];
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => _filterFreq = tabs[i]),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  decoration: BoxDecoration(
+                    color: active ? AppColors.primary.withValues(alpha: 0.2) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(9),
                   ),
-                ),
-                child: Center(
-                  child: Text(
-                    labels[i],
-                    style: GoogleFonts.nunito(
-                      color: active ? AppColors.primary : AppColors.textPrimary.withValues(alpha: 0.54),
-                      fontSize: 12,
-                      fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                  child: Center(
+                    child: Text(
+                      labels[i],
+                      style: GoogleFonts.nunito(
+                        color: active ? AppColors.primary : AppColors.textPrimary.withValues(alpha: 0.54),
+                        fontSize: 13,
+                        fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
     );
   }
@@ -401,27 +434,34 @@ class _DailyScreenState extends State<DailyScreen> {
   // ── Kartu Profil Statistik Pemain ─────────────────────────────
   // Mirip dengan Header di Home, ini menampilkan Info Karakter (Avatar, Level, XP bar)
   Widget _buildUserStats() {
+    // 1. Hitung total XP yang dibutuhkan untuk naik ke level berikutnya
     final xpNext = _xpNext(_level);
-    final xpProg = (_xp % xpNext) / xpNext;
-    final rankColor = _rankColor(_rank);
-    final bool isSSR = _rank == 'SSR' || _rank == 'SSS';
-    // Gunakan isSSR untuk efek glow jika diperlukan
-    final glowColor = isSSR ? rankColor.withValues(alpha: 0.3) : Colors.transparent;
     
+    // 2. Hitung persentase XP saat ini (untuk mengisi bar progress)
+    final xpProg = (_xp % xpNext) / xpNext;
+    
+    // 3. Hitung persentase Darah (HP) saat ini
+    final eProg = _hp / _maxHp;
+    
+    // 4. Dapatkan warna pangkat (misalnya SSR warna pelangi, A warna merah, dll)
+    final rc = _rankColor(_rank);
+    final isSSR = _rank == 'SSR';
+
     return ThemeCard(
-      margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
       padding: const EdgeInsets.all(16),
       backgroundColor: AppColors.cardBackground,
       borderRadius: BorderRadius.circular(20),
       borderColor: AppColors.cardBorder,
-      borderWidth: 1.5,
+      borderWidth: AppColors.borderWidth,
       child: Column(
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                width: 64,
-                height: 64,
+                width: 84,
+                height: 84,
                 child: ThemeCard(
                   backgroundColor: AppColors.surface,
                   borderRadius: BorderRadius.circular(14),
@@ -429,42 +469,83 @@ class _DailyScreenState extends State<DailyScreen> {
                   borderWidth: AppColors.borderWidth * 2,
                   boxShadow: [
                     BoxShadow(
-                      color: isSSR ? glowColor : AppColors.primary.withValues(alpha: 0.3),
-                      blurRadius: isSSR ? 12 : 8,
-                      spreadRadius: isSSR ? 2 : 0,
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 8,
                     ),
                   ],
                   child: AvatarPreview(
-                  equippedItems: _equippedItems,
-                  size: 64,
-                  showBackground: true,
-                  baseBody: _baseBody,
+                    equippedItems: _equippedItems,
+                    size: 84,
+                    showBackground: true,
+                    baseBody: _baseBody,
+                  ),
                 ),
               ),
-              ),
-              SizedBox(width: 12),
+              SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_userName, style: GoogleFonts.nunito(
-                      color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w800,
-                    )),
-                    Text('@$_username', style: GoogleFonts.nunito(
-                      color: AppColors.textPrimary.withValues(alpha: 0.54), fontSize: 11, fontWeight: FontWeight.w600,
-                    )),
+                    Text(
+                      _userName,
+                      style: GoogleFonts.nunito(
+                        color: AppColors.textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      '@$_username',
+                      style: GoogleFonts.nunito(
+                        color: AppColors.textPrimary.withValues(alpha: 0.54),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: rankColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: rankColor.withValues(alpha: 0.5), width: 1.2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 3,
                       ),
-                      child: Text('$_rank  •  Lv.$_level', style: GoogleFonts.nunito(
-                        color: rankColor, fontSize: 11, fontWeight: FontWeight.w800,
-                      )),
+                      decoration: BoxDecoration(
+                        color: rc.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: rc.withValues(alpha: 0.5),
+                          width: 1.2,
+                        ),
+                        boxShadow: isSSR
+                            ? [
+                                BoxShadow(
+                                  color: rc.withValues(alpha: 0.4),
+                                  blurRadius: 8,
+                                  spreadRadius: 1,
+                                ),
+                              ]
+                            : null,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isSSR) ...[
+                            Text('✨', style: TextStyle(fontSize: 10)),
+                            SizedBox(width: AppColors.borderWidth * 3),
+                          ],
+                          Text(
+                            '$_rank  •  Lv.$_level',
+                            style: GoogleFonts.nunito(
+                              color: rc,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                    SizedBox(height: 8),
+                    // Active Buffs Row
+                    ActiveBuffsWidget(equippedItems: _equippedItems, xpBonusUntil: _xpBonusUntil, goldBonusUntil: _goldBonusUntil),
                   ],
                 ),
               ),
@@ -473,14 +554,23 @@ class _DailyScreenState extends State<DailyScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.monetization_on_rounded, color: AppColors.gold, size: 18),
+                      Icon(
+                        Icons.monetization_on_rounded,
+                        color: AppColors.gold,
+                        size: 18,
+                      ),
                       SizedBox(width: 4),
-                      Text('$_coin', style: GoogleFonts.nunito(
-                        color: AppColors.gold, fontSize: 15, fontWeight: FontWeight.w800,
-                      )),
+                      Text(
+                        '$_coin',
+                        style: GoogleFonts.nunito(
+                          color: AppColors.gold,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   GestureDetector(
                     onTap: () async {
                       await AuthService().logout();
@@ -493,19 +583,33 @@ class _DailyScreenState extends State<DailyScreen> {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.error.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
+                        border: Border.all(
+                          color: AppColors.error.withValues(alpha: 0.4),
+                        ),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.logout_rounded, color: AppColors.error, size: 14),
+                          Icon(
+                            Icons.logout_rounded,
+                            color: AppColors.error,
+                            size: 14,
+                          ),
                           SizedBox(width: 4),
-                          Text('Logout', style: GoogleFonts.nunito(
-                            color: AppColors.error, fontSize: 12, fontWeight: FontWeight.bold,
-                          )),
+                          Text(
+                            'Logout',
+                            style: GoogleFonts.nunito(
+                              color: AppColors.error,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -514,53 +618,58 @@ class _DailyScreenState extends State<DailyScreen> {
               ),
             ],
           ),
-          SizedBox(height: 14),
-          _miniBar(
-            label: 'HP',
-            icon: Icons.favorite_rounded,
-            value: _hp,
-            max: _maxHp,
-            pct: _hp / _maxHp,
-            color: AppColors.hp,
-          ),
           SizedBox(height: 8),
-          _miniBar(
-            label: 'XP',
-            icon: Icons.star_rounded,
-            value: _xp % xpNext,
-            max: xpNext,
-            pct: xpProg,
-            color: AppColors.xp,
+          _bar(
+            'HP',
+            Icons.favorite_rounded,
+            _hp,
+            _maxHp,
+            eProg,
+            AppColors.hp,
+          ),
+          SizedBox(height: 4),
+          _bar(
+            'XP',
+            Icons.star_rounded,
+            _xp % xpNext,
+            xpNext,
+            xpProg,
+            AppColors.xp,
           ),
         ],
       ),
     );
   }
 
-  // ── Mini Bar ───────────────────────────────────────────
-  // Mirip dengan _bar di home_screen, tapi versi lebih kecil untuk layar ini
-  Widget _miniBar({
-    required String label,
-    required IconData icon,
-    required int value,
-    required int max,
-    required double pct,
-    required Color color,
-  }) {
+  // ── Bar (HP / XP) ───────────────────────────────────────────
+  Widget _bar(
+    String label, 
+    IconData ic,  
+    int val,      
+    int mx,       
+    double prog,  
+    Color c,      
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(icon, color: color, size: 13),
+            Icon(ic, color: c, size: 13),
             SizedBox(width: 5),
-            Text(label, style: GoogleFonts.nunito(
-              color: AppColors.textPrimary.withValues(alpha: 0.60), fontSize: 11, fontWeight: FontWeight.w600,
-            )),
+            Text(
+              label,
+              style: GoogleFonts.nunito(
+                color: AppColors.textPrimary.withValues(alpha: 0.60),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             Spacer(),
-            Text('$value / $max', style: GoogleFonts.nunito(
-              color: AppColors.textPrimary.withValues(alpha: 0.38), fontSize: 10,
-            )),
+            Text(
+              '$val / $mx',
+              style: GoogleFonts.nunito(color: AppColors.textPrimary.withValues(alpha: 0.38), fontSize: 10),
+            ),
           ],
         ),
         const SizedBox(height: 5),
@@ -569,20 +678,16 @@ class _DailyScreenState extends State<DailyScreen> {
           child: Container(
             height: 9,
             width: double.infinity,
-            color: color.withValues(alpha: 0.15),
+            color: c.withValues(alpha: 0.12),
             child: FractionallySizedBox(
               alignment: Alignment.centerLeft,
-              widthFactor: pct.clamp(0.0, 1.0),
+              widthFactor: prog.clamp(0.0, 1.0),
               child: Container(
                 decoration: BoxDecoration(
-                  color: color,
+                  gradient: LinearGradient(
+                    colors: [c, c.withValues(alpha: 0.7)],
+                  ),
                   borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withValues(alpha: 0.4),
-                      blurRadius: 4,
-                    ),
-                  ],
                 ),
               ),
             ),
@@ -878,6 +983,30 @@ class DailyTaskCardState extends State<DailyTaskCard>
       ),
     );
   }
+
+  void _openProof(
+    BuildContext context,
+    Map<String, dynamic> data,
+    String id,
+  ) {
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    HapticFeedback.mediumImpact();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProofScreen(
+          taskId: id,
+          uid: uid,
+          title: data['title'] ?? 'Task',
+          category: data['category'] ?? 'Strength',
+          proofType: data[TaskSchema.proofType] ?? TaskSchema.proofTypeNone,
+          xpReward: (data[TaskSchema.xp] ?? 20) as int,
+          goldReward: (data[TaskSchema.goldReward] ?? 5) as int,
+        ),
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -1214,7 +1343,12 @@ class DailyTaskCardState extends State<DailyTaskCard>
                             if (durationMin > 0) {
                               _openTimer(context, data, id, color);
                             } else {
-                              widget.onToggle(id, done, diff, title, cat);
+                              final pType = data[TaskSchema.proofType] ?? TaskSchema.proofTypeNone;
+                              if (!done && pType != TaskSchema.proofTypeNone) {
+                                _openProof(context, data, id);
+                              } else {
+                                widget.onToggle(id, done, diff, title, cat);
+                              }
                             }
                           },
                           child: Container(

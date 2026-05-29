@@ -57,6 +57,9 @@ class HomeViewModel extends ChangeNotifier {
   Timestamp? _xpBonusUntil;
   Timestamp? get xpBonusUntil => _xpBonusUntil;
 
+  Timestamp? _goldBonusUntil;
+  Timestamp? get goldBonusUntil => _goldBonusUntil;
+
   // Stream untuk memberi tahu UI (HomeScreen) bahwa julukan baru saja berubah
   final _titleUnlockEvent = StreamController<String>.broadcast();
   Stream<String> get titleUnlockEvent => _titleUnlockEvent.stream;
@@ -167,6 +170,7 @@ class HomeViewModel extends ChangeNotifier {
         }
         _dynamicTitle = newTitle;
         _xpBonusUntil = d[UserSchema.xpBonusUntil] as Timestamp?;
+        _goldBonusUntil = d[UserSchema.goldBonusUntil] as Timestamp?;
         _isFirstLoad = false;
         
         _isLoading = false;

@@ -9,17 +9,17 @@ import '../screens/onboarding_screen.dart';
 import 'dart:math';
 
 // Flat Minimalist Colors
-const Color _bgDark = Color(0xFF121824);
-const Color _cardBg = Color(0xFF1F293D);
-const Color _accentPurple = Color(0xFF8B5CF6);
-const Color _accentCyan = Color(0xFF06B6D4);
+const Color _bgDark = Color(0xFF0F0F1E);
+const Color _cardBg = Color(0xFF1A1A2E);
+const Color _accentPurple = Color(0xFF7C3AED); // Main app purple
+const Color _accentCyan = Color(0xFF7C3AED);
 const Color _textWhite = Color(0xFFFFFFFF);
-const Color _textMuted = Color(0xFF9CA3AF);
+const Color _textMuted = Color(0x8AFFFFFF);
 
 const Color _flatRed = Color(0xFFEF4444);
-const Color _flatAmber = Color(0xFFF59E0B);
-const Color _flatGreen = Color(0xFF10B981);
-const Color _flatBlue = Color(0xFF3B82F6);
+const Color _flatAmber = Color(0xFF7C3AED);
+const Color _flatGreen = Color(0xFF7C3AED);
+const Color _flatBlue = Color(0xFF7C3AED);
 
 class DevToolsSheet extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -56,7 +56,7 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
   bool _isLoading = false;
   String _rankName = 'F';
 
-  final List<String> _rankOptions = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSR'];
+  final List<String> _rankOptions = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS', 'SSR'];
 
   // Quick Quest
   final TextEditingController _questNameCtrl = TextEditingController();
@@ -67,6 +67,23 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
   void initState() {
     super.initState();
     _loadFromData(widget.userData, FirebaseAuth.instance.currentUser?.uid ?? '');
+    
+    _levelCtrl.addListener(() {
+      final lvl = int.tryParse(_levelCtrl.text) ?? 1;
+      final newRank = RankSystem.calculateRank(
+        lvl,
+        str: int.tryParse(_strCtrl.text) ?? 0,
+        def: int.tryParse(_defCtrl.text) ?? 0,
+        intl: int.tryParse(_intCtrl.text) ?? 0,
+        vit: int.tryParse(_vitCtrl.text) ?? 0,
+        agi: int.tryParse(_agiCtrl.text) ?? 0,
+      );
+      if (_rankName != newRank) {
+        setState(() {
+          _rankName = newRank;
+        });
+      }
+    });
   }
 
   void _loadFromData(Map<String, dynamic> data, String uid) {
@@ -115,25 +132,14 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
   }
 
   void _syncRankFromLevel(int lvl) {
-    if (lvl >= 150) {
-      _rankName = 'SSR';
-    } else if (lvl >= 100) {
-      _rankName = 'SS';
-    } else if (lvl >= 70) {
-      _rankName = 'S';
-    } else if (lvl >= 50) {
-      _rankName = 'A';
-    } else if (lvl >= 40) {
-      _rankName = 'B';
-    } else if (lvl >= 30) {
-      _rankName = 'C';
-    } else if (lvl >= 20) {
-      _rankName = 'D';
-    } else if (lvl >= 10) {
-      _rankName = 'E';
-    } else {
-      _rankName = 'F';
-    }
+    _rankName = RankSystem.calculateRank(
+      lvl,
+      str: int.tryParse(_strCtrl.text) ?? 0,
+      def: int.tryParse(_defCtrl.text) ?? 0,
+      intl: int.tryParse(_intCtrl.text) ?? 0,
+      vit: int.tryParse(_vitCtrl.text) ?? 0,
+      agi: int.tryParse(_agiCtrl.text) ?? 0,
+    );
   }
 
   void _onRankChanged(String? newRank) {
@@ -141,13 +147,14 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
     setState(() {
       _rankName = newRank;
       if (newRank == 'SSR') _levelCtrl.text = '150';
-      else if (newRank == 'SS') _levelCtrl.text = '100';
-      else if (newRank == 'S') _levelCtrl.text = '70';
-      else if (newRank == 'A') _levelCtrl.text = '50';
-      else if (newRank == 'B') _levelCtrl.text = '40';
-      else if (newRank == 'C') _levelCtrl.text = '30';
-      else if (newRank == 'D') _levelCtrl.text = '20';
-      else if (newRank == 'E') _levelCtrl.text = '10';
+      else if (newRank == 'SSS') _levelCtrl.text = '121';
+      else if (newRank == 'SS') _levelCtrl.text = '91';
+      else if (newRank == 'S') _levelCtrl.text = '71';
+      else if (newRank == 'A') _levelCtrl.text = '51';
+      else if (newRank == 'B') _levelCtrl.text = '36';
+      else if (newRank == 'C') _levelCtrl.text = '21';
+      else if (newRank == 'D') _levelCtrl.text = '11';
+      else if (newRank == 'E') _levelCtrl.text = '6';
       else if (newRank == 'F') _levelCtrl.text = '1';
     });
   }

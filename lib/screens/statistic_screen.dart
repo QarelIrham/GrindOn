@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -54,6 +55,8 @@ class _StatisticScreenState extends State<StatisticScreen>
   List<String> _equippedBadges = [];
   bool _isLoading = true;
 
+  StreamSubscription<DocumentSnapshot>? _userSub;
+
   // Leaderboard tutorial
   bool _showLeaderboardTutorial = false;
 
@@ -81,6 +84,7 @@ class _StatisticScreenState extends State<StatisticScreen>
 
   @override
   void dispose() {
+    _userSub?.cancel();
     _barCtrl.dispose();
     super.dispose();
   }
@@ -89,43 +93,47 @@ class _StatisticScreenState extends State<StatisticScreen>
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    final doc = await FirebaseFirestore.instance
+    _userSub = FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
-        .get();
+        .snapshots()
+        .listen((doc) {
+      if (!mounted || !doc.exists) return;
 
-    if (!mounted || !doc.exists) return;
+      final d = doc.data()!;
+      setState(() {
+        _name = d[UserSchema.name] ?? 'User';
+        _level = d[UserSchema.level] ?? 1;
+        _xp = d[UserSchema.xp] ?? 0;
+        
+        _strengthXp = d[UserSchema.strengthXp] ?? 0;
+        _defenseXp = d[UserSchema.defenseXp] ?? 0;
+        _intelligenceXp = d[UserSchema.intelligenceXp] ?? 0;
+        _vitalityXp = d[UserSchema.vitalityXp] ?? 0;
+        _agilityXp = d[UserSchema.agilityXp] ?? 0;
+        
+        _rank = RankSystem.calculateRank(_level, str: _strengthXp, def: _defenseXp, intl: _intelligenceXp, vit: _vitalityXp, agi: _agilityXp);
+        _streak = d[UserSchema.streak] ?? 0;
+        _longestStreak = d[UserSchema.longestStreak] ?? 0;
+        _totalDone = d[UserSchema.totalTasksDone] ?? 0;
+        _totalFailed = d[UserSchema.totalTasksFailed] ?? 0;
+        _gold = d[UserSchema.gold] ?? 0;
+        _hp = d[UserSchema.hp] ?? 0;
+        _maxHp = d[UserSchema.maxHp] ?? 100;
+        
+        _equippedBadges = List<String>.from(d[UserSchema.equippedBadges] ?? []);
+        _isLoading = false;
+      });
+      _barCtrl.forward();
 
-    final d = doc.data()!;
-    setState(() {
-      _name = d[UserSchema.name] ?? 'User';
-      _level = d[UserSchema.level] ?? 1;
-      _xp = d[UserSchema.xp] ?? 0;
-      _rank = RankSystem.calculateRank(_level, str: _strengthXp, def: _defenseXp, intl: _intelligenceXp, vit: _vitalityXp, agi: _agilityXp);
-      _streak = d[UserSchema.streak] ?? 0;
-      _longestStreak = d[UserSchema.longestStreak] ?? 0;
-      _totalDone = d[UserSchema.totalTasksDone] ?? 0;
-      _totalFailed = d[UserSchema.totalTasksFailed] ?? 0;
-      _gold = d[UserSchema.gold] ?? 0;
-      _hp = d[UserSchema.hp] ?? 0;
-      _maxHp = d[UserSchema.maxHp] ?? 100;
-      _strengthXp = d[UserSchema.strengthXp] ?? 0;
-      _defenseXp = d[UserSchema.defenseXp] ?? 0;
-      _intelligenceXp = d[UserSchema.intelligenceXp] ?? 0;
-      _vitalityXp = d[UserSchema.vitalityXp] ?? 0;
-      _agilityXp = d[UserSchema.agilityXp] ?? 0;
-      _equippedBadges = List<String>.from(d[UserSchema.equippedBadges] ?? []);
-      _isLoading = false;
+      // Check leaderboard tutorial
+      final tutData = doc.data()!;
+      final tutMap = tutData['tutorialsCompleted'] as Map<String, dynamic>? ?? {};
+      final lbDone = tutMap['leaderboard'] as bool? ?? false;
+      if (!lbDone && mounted) {
+        setState(() => _showLeaderboardTutorial = true);
+      }
     });
-    _barCtrl.forward();
-
-    // Check leaderboard tutorial
-    final tutData = doc.data()!;
-    final tutMap = tutData['tutorialsCompleted'] as Map<String, dynamic>? ?? {};
-    final lbDone = tutMap['leaderboard'] as bool? ?? false;
-    if (!lbDone && mounted) {
-      setState(() => _showLeaderboardTutorial = true);
-    }
   }
 
   Future<void> _markLeaderboardTutorialDone(String uid) async {
@@ -199,7 +207,7 @@ class _StatisticScreenState extends State<StatisticScreen>
           child: Column(
             children: [
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                padding: EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0, bottom: 0.0),
                 child: ScreenHeader(title: 'Statistics'),
               ),
               Container(
@@ -674,7 +682,7 @@ class _StatisticScreenState extends State<StatisticScreen>
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _headerStat('HP', '$_hp/$_maxHp', AppColors.error, hpProgress),
-              _headerStat('XP', '$_xp/$xpNeeded', AppColors.warning, progress),
+              _headerStat('XP', '${_xp % xpNeeded}/$xpNeeded', AppColors.xp, progress),
               _headerStat('Coin', '$_gold', AppColors.warning, 1.0, isCoin: true),
             ],
           ),
@@ -777,42 +785,59 @@ class _StatisticScreenState extends State<StatisticScreen>
   Widget _buildStreakRow() {
     return Row(
       children: [
-        Expanded(child: _statCard('🔥', '$_streak', 'Streak', AppColors.warning)),
+        Expanded(child: _statCard(Icons.local_fire_department_rounded, '$_streak', 'Streak', AppColors.warning)),
         SizedBox(width: 10),
-        Expanded(child: _statCard('🏆', '$_longestStreak', 'Terpanjang', AppColors.gold)),
+        Expanded(child: _statCard(Icons.emoji_events_rounded, '$_longestStreak', 'Terpanjang', AppColors.gold)),
         SizedBox(width: 10),
-        Expanded(child: _statCard('✅', '$_totalDone', 'Selesai', AppColors.success)),
+        Expanded(child: _statCard(Icons.check_circle_rounded, '$_totalDone', 'Selesai', AppColors.success)),
         SizedBox(width: 10),
-        Expanded(child: _statCard('💀', '$_totalFailed', 'Gagal', AppColors.error)),
+        Expanded(child: _statCard(Icons.cancel_rounded, '$_totalFailed', 'Gagal', AppColors.error)),
       ],
     );
   }
 
-  Widget _statCard(String emoji, String value, String label, Color color) =>
-    // Menggunakan ThemeCard agar stat kard memiliki gaya komik //
+  Widget _statCard(IconData icon, String value, String label, Color color) =>
     ThemeCard(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
       backgroundColor: cardDark,
-      borderRadius: BorderRadius.circular(14),
-      borderColor: color.withValues(alpha: 0.2),
-      borderWidth: AppColors.borderWidth,
+      borderRadius: BorderRadius.circular(16),
+      borderColor: color.withValues(alpha: 0.3),
+      borderWidth: 1.5,
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(emoji, style: TextStyle(fontSize: 18)),
-          SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          SizedBox(height: 8),
           Text(value, style: GoogleFonts.nunito(
             color: color, fontSize: 18, fontWeight: FontWeight.w900,
           )),
-          Text(label, style: GoogleFonts.nunito(color: AppColors.textPrimary.withValues(alpha: 0.38), fontSize: 9),
-              textAlign: TextAlign.center),
+          SizedBox(height: 2),
+          Text(label, style: GoogleFonts.nunito(
+            color: AppColors.textPrimary.withValues(alpha: 0.5), fontSize: 9, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
 
   // ── 4. Radar Chart ────────────────────────────────────────
   Widget _buildRadarSection() {
-    // 9999 adalah limit absolut agar Spider Chart sinkron (proposional) di semua tier
-    const double maxLimit = 9999.0;
+    // Cari nilai atribut tertinggi untuk membuat skala chart dinamis
+    final double maxStat = [_strengthXp, _intelligenceXp, _agilityXp, _vitalityXp, _defenseXp]
+        .map((e) => e.toDouble())
+        .reduce((a, b) => a > b ? a : b);
+    
+    // Berikan ruang tambahan 20% di atas max stat agar chart tidak menempel di tepi
+    // Minimal 100 agar chart tidak terlalu besar jika stats masih 0 atau sangat kecil
+    final double maxLimit = (maxStat < 100) ? 100.0 : (maxStat * 1.2);
+
     final values = [
       _strengthXp / maxLimit,
       _intelligenceXp / maxLimit,
@@ -1019,8 +1044,12 @@ class _StatisticScreenState extends State<StatisticScreen>
     final tasksDone = d[UserSchema.totalTasksDone] ?? 0;
     final dynamicTitle = RankSystem.getDynamicTitle(str, def, intl, vit, agi, rank, level, tasksDone);
 
-    // Hitung Radar Chart
-    const double maxLimit = 9999.0;
+    // Hitung Radar Chart secara dinamis
+    final double maxStat = [str, intl, agi, vit, def]
+        .map((e) => e.toDouble())
+        .reduce((a, b) => a > b ? a : b);
+    final double maxLimit = (maxStat < 100) ? 100.0 : (maxStat * 1.2);
+
     final values = <double>[
       str / maxLimit,
       intl / maxLimit,

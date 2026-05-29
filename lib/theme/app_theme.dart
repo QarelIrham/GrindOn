@@ -529,6 +529,18 @@ class AppTheme {
           textStyle: AppTextStyles.button,
         ),
       ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.cardBackground,
+        contentTextStyle: AppTextStyles.bodyBold.copyWith(color: AppColors.textPrimary),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5), width: 1.5),
+        ),
+        elevation: 10,
+        actionTextColor: AppColors.accent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      ),
     );
   }
 
@@ -566,6 +578,18 @@ class AppTheme {
             borderRadius: BorderRadius.circular(8),
           ),
         ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.white,
+        contentTextStyle: AppTextStyles.comicBody.copyWith(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(0), // Sharp comic edges
+          side: const BorderSide(color: Colors.black, width: 3),
+        ),
+        elevation: 0,
+        actionTextColor: Colors.black,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       ),
     );
   }

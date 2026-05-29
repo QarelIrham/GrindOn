@@ -210,6 +210,7 @@ class _TaskScreenState extends State<TaskScreen> with TickerProviderStateMixin {
                       ActiveBuffsWidget(
                         equippedItems: context.watch<HomeViewModel>().equippedItems,
                         xpBonusUntil: context.watch<HomeViewModel>().xpBonusUntil,
+                        goldBonusUntil: context.watch<HomeViewModel>().goldBonusUntil,
                       ),
                     ],
                   ),

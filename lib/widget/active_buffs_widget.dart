@@ -8,7 +8,8 @@ import '../theme/app_theme.dart';
 class ActiveBuffsWidget extends StatefulWidget {
   final Map<String, dynamic> equippedItems;
   final dynamic xpBonusUntil;
-  const ActiveBuffsWidget({super.key, required this.equippedItems, this.xpBonusUntil});
+  final dynamic goldBonusUntil;
+  const ActiveBuffsWidget({super.key, required this.equippedItems, this.xpBonusUntil, this.goldBonusUntil});
 
   @override
   State<ActiveBuffsWidget> createState() => _ActiveBuffsWidgetState();
@@ -36,7 +37,9 @@ class _ActiveBuffsWidgetState extends State<ActiveBuffsWidget> {
   Widget build(BuildContext context) {
     final equippedItems = widget.equippedItems;
     final xpBonusUntil = widget.xpBonusUntil;
+    final goldBonusUntil = widget.goldBonusUntil;
     final hasXpPotion = xpBonusUntil != null && xpBonusUntil!.toDate().isAfter(DateTime.now());
+    final hasGoldPotion = goldBonusUntil != null && goldBonusUntil!.toDate().isAfter(DateTime.now());
     
     // We determine what kind of buffs are active based on the equipped items
     // Pet usually gives goldBoost
@@ -53,8 +56,6 @@ class _ActiveBuffsWidgetState extends State<ActiveBuffsWidget> {
       return item.category != 'Pet' && item.category != 'Wallpaper' && item.passiveStats['xpBoost']! > 0 || item.passiveStats['maxHp']! > 0;
     });
 
-    if (!hasXpPotion && !hasClothingBuff && !hasPetBuff) return const SizedBox.shrink();
-
     String potionTime = '';
     if (hasXpPotion) {
       final diff = xpBonusUntil!.toDate().difference(DateTime.now());
@@ -66,6 +67,20 @@ class _ActiveBuffsWidgetState extends State<ActiveBuffsWidget> {
         potionTime = '<1m';
       }
     }
+
+    String goldTime = '';
+    if (hasGoldPotion) {
+      final diff = goldBonusUntil!.toDate().difference(DateTime.now());
+      if (diff.inHours > 0) {
+        goldTime = '${diff.inHours}j ${diff.inMinutes.remainder(60)}m';
+      } else if (diff.inMinutes > 0) {
+        goldTime = '${diff.inMinutes}m';
+      } else {
+        goldTime = '<1m';
+      }
+    }
+
+    if (!hasXpPotion && !hasGoldPotion && !hasClothingBuff && !hasPetBuff) return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.only(top: 12.0),
@@ -89,6 +104,25 @@ class _ActiveBuffsWidgetState extends State<ActiveBuffsWidget> {
                   if (potionTime.isNotEmpty) ...[
                     const SizedBox(width: 4),
                     Text(potionTime.trim(), style: GoogleFonts.nunito(color: Colors.purpleAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                  ],
+                ],
+              ),
+            ),
+          if (hasGoldPotion)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.yellow.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: Colors.yellow.withValues(alpha: 0.5)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.request_quote, color: Colors.yellowAccent, size: 12),
+                  if (goldTime.isNotEmpty) ...[
+                    const SizedBox(width: 4),
+                    Text(goldTime.trim(), style: GoogleFonts.nunito(color: Colors.yellowAccent, fontSize: 10, fontWeight: FontWeight.bold)),
                   ],
                 ],
               ),

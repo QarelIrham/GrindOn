@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -12,6 +13,7 @@ import '../widget/theme_card.dart';
 import '../widget/settings_sheet.dart';
 import '../services/locale_service.dart';
 import '../theme/app_theme.dart';
+import '../widget/screen_header.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -50,6 +52,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   List<String> _claimedBadges = [];
   List<String> _equippedBadges = [];
   String? _baseBody;
+  StreamSubscription<DocumentSnapshot>? _userSub;
 
   @override
   void initState() {
@@ -57,12 +60,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadUserData();
   }
 
+  @override
+  void dispose() {
+    _userSub?.cancel();
+    super.dispose();
+  }
+
   Future<void> _loadUserData() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-    if (!mounted || !doc.exists) return;
+    _userSub = FirebaseFirestore.instance.collection('users').doc(uid).snapshots().listen((doc) {
+      if (!mounted || !doc.exists) return;
 
     final d = doc.data()!;
     setState(() {
@@ -109,6 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
       _baseBody = d[UserSchema.baseBody] as String?;
     });
+  });
   }
 
   // --- Logic Methods (Logika Bisnis) ---
@@ -294,8 +304,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
       updates[UserSchema.agilityXp] = FieldValue.increment(50);
     } else if (itemId == 'intelligence_potion') {
       updates[UserSchema.intelligenceXp] = FieldValue.increment(50);
+    } else if (itemId == 'vitality_potion') {
+      updates[UserSchema.vitalityXp] = FieldValue.increment(50);
+    } else if (itemId == 'defense_potion') {
+      updates[UserSchema.defenseXp] = FieldValue.increment(50);
     } else if (itemId == 'xp_scroll') {
       updates[UserSchema.xpBonusUntil] = Timestamp.fromDate(DateTime.now().add(const Duration(hours: 1)));
+    } else if (itemId == 'gold_scroll') {
+      updates[UserSchema.goldBonusUntil] = Timestamp.fromDate(DateTime.now().add(const Duration(hours: 1)));
+    } else if (itemId == 'revive_token') {
+      updates[UserSchema.hp] = _maxHp;
+      updates[UserSchema.isBurntOut] = false;
+    } else if (itemId == 'mystery_box') {
+      // Logic gacha sederhana — 3 kemungkinan hadiah
+      final random = DateTime.now().millisecondsSinceEpoch % 3;
+      if (random == 0) {
+        updates[UserSchema.gold] = FieldValue.increment(150);
+      } else if (random == 1) {
+        updates[UserSchema.strengthXp] = FieldValue.increment(100);
+        updates[UserSchema.agilityXp] = FieldValue.increment(100);
+        updates[UserSchema.intelligenceXp] = FieldValue.increment(100);
+        updates[UserSchema.vitalityXp] = FieldValue.increment(100);
+        updates[UserSchema.defenseXp] = FieldValue.increment(100);
+      } else {
+        updates[UserSchema.hp] = _maxHp;
+      }
+
+      await FirebaseFirestore.instance.collection('users').doc(uid).update(updates);
+      _loadUserData();
+      // Tampilkan popup reveal hadiah Mystery Box
+      _showMysteryBoxReveal(random);
+      return; // Early return agar tidak memanggil _showItemUsedSnackBar
     }
 
     await FirebaseFirestore.instance.collection('users').doc(uid).update(updates);
@@ -312,11 +351,142 @@ class _ProfileScreenState extends State<ProfileScreen> {
       msg = l.profileHpRestored;
     } else if (itemId == 'xp_scroll') {
       msg = l.profileXpBonusActive;
+    } else if (itemId == 'gold_scroll') {
+      msg = 'Double Gold aktif selama 1 Jam!';
+    } else if (itemId == 'revive_token') {
+      msg = 'Sembuh dari Burnout! HP penuh kembali.';
+    } else if (itemId == 'mystery_box') {
+      msg = 'Mystery Box dibuka! Mendapatkan hadiah acak!';
     } else if (itemId.contains('_potion')) {
       msg = 'Mendapatkan 50 XP tambahan!';
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg), backgroundColor: AppColors.primary, behavior: SnackBarBehavior.floating),
+    );
+  }
+
+  // Popup reveal khusus untuk Mystery Box — menampilkan hadiah yang didapat secara dramatis
+  void _showMysteryBoxReveal(int result) {
+    if (!mounted) return;
+    AudioService.playSuccess();
+
+    // Tentukan isi hadiah berdasarkan hasil random
+    String prizeTitle;
+    String prizeDesc;
+    IconData prizeIcon;
+    Color prizeColor;
+
+    if (result == 0) {
+      prizeTitle = '150 Gold!';
+      prizeDesc = 'Kamu mendapatkan koin emas sebanyak 150!';
+      prizeIcon = Icons.monetization_on_rounded;
+      prizeColor = const Color(0xFFFFD700);
+    } else if (result == 1) {
+      prizeTitle = 'All Stats +100 XP!';
+      prizeDesc = 'Semua atribut (Str, Agi, Int, Vit, Def) bertambah 100 XP!';
+      prizeIcon = Icons.auto_awesome_rounded;
+      prizeColor = const Color(0xFF8B5CF6);
+    } else {
+      prizeTitle = 'HP Full Restore!';
+      prizeDesc = 'HP kamu dipulihkan sepenuhnya!';
+      prizeIcon = Icons.favorite_rounded;
+      prizeColor = const Color(0xFFEF4444);
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(
+            color: const Color(0xFF13131A),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: prizeColor.withValues(alpha: 0.5), width: 2),
+            boxShadow: [
+              BoxShadow(color: prizeColor.withValues(alpha: 0.25), blurRadius: 30, spreadRadius: 4),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Label Mystery Box
+              Text(
+                'MYSTERY BOX',
+                style: GoogleFonts.cinzel(
+                  color: prizeColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 3,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Kamu mendapatkan...',
+                style: GoogleFonts.nunito(
+                  color: AppColors.textPrimary.withValues(alpha: 0.54),
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Ikon hadiah
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: prizeColor.withValues(alpha: 0.15),
+                  border: Border.all(color: prizeColor.withValues(alpha: 0.4), width: 2),
+                  boxShadow: [
+                    BoxShadow(color: prizeColor.withValues(alpha: 0.3), blurRadius: 16),
+                  ],
+                ),
+                child: Icon(prizeIcon, color: prizeColor, size: 40),
+              ),
+              const SizedBox(height: 20),
+              // Nama hadiah
+              Text(
+                prizeTitle,
+                style: GoogleFonts.nunito(
+                  color: prizeColor,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Deskripsi hadiah
+              Text(
+                prizeDesc,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.nunito(
+                  color: AppColors.textPrimary.withValues(alpha: 0.70),
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 28),
+              // Tombol tutup
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: prizeColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'Mantap!',
+                    style: GoogleFonts.nunito(fontWeight: FontWeight.w800, fontSize: 15),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -360,40 +530,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Menampilkan tulisan "Character", Jumlah Koin, dan Tombol Settings
   Widget _buildTopBar() {
     final l = context.lw;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 40, 20, 10),
-      color: AppColors.background,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Image.asset(
-                'lib/assets/logo/Logo_GrindOn.png',
-                height: 28,
-                width: 28,
-                errorBuilder: (context, error, stackTrace) => Icon(Icons.shield, color: AppColors.primary, size: 24),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                l.profileCharacter.toUpperCase(),
-                style: GoogleFonts.cinzel(
-                  color: AppColors.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2.0,
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              _buildCoinDisplay(),
-              const SizedBox(width: 12),
-              _buildSettingsButton(),
-            ],
-          ),
-        ],
+    return Padding(
+      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0, bottom: 0.0),
+      child: ScreenHeader(
+        title: l.profileCharacter,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildCoinDisplay(),
+            const SizedBox(width: 12),
+            _buildSettingsButton(),
+          ],
+        ),
       ),
     );
   }

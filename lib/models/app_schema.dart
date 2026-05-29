@@ -80,6 +80,7 @@ class UserSchema {
   static const String soundEnabled = 'soundEnabled';
   static const String musicEnabled = 'musicEnabled';
   static const String xpBonusUntil = 'xpBonusUntil';
+  static const String goldBonusUntil = 'goldBonusUntil';
   static const String claimedBadges = 'claimedBadges';
   static const String equippedBadges = 'equippedBadges';
 
@@ -149,9 +150,14 @@ class UserSchema {
       'blue_potion': 0,
       'green_potion': 0,
       'xp_scroll': 0,
+      'gold_scroll': 0,
       'strength_potion': 0,
       'agility_potion': 0,
       'intelligence_potion': 0,
+      'vitality_potion': 0,
+      'defense_potion': 0,
+      'mystery_box': 0,
+      'revive_token': 0,
     },
     claimedBadges: [],
     equippedBadges: [],
@@ -265,7 +271,7 @@ class RankSystem {
   // ─ Rank dari Level & Stat ──────────────────────────
   static String calculateRank(int level, {int str = 0, int def = 0, int intl = 0, int vit = 0, int agi = 0}) {
     bool maxStats = str >= 9999 && def >= 9999 && intl >= 9999 && vit >= 9999 && agi >= 9999;
-    if (level >= 151 && maxStats) return 'SSR'; // Mythical (Mentok semua)
+    if (level >= 150 && maxStats) return 'SSR'; // Mythical (Mentok semua)
     if (level >= 121) return 'SSS'; // Endgame
     if (level >= 91) return 'SS'; // Prestige
     if (level >= 71) return 'S'; // Late game

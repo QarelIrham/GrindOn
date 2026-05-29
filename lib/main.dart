@@ -162,8 +162,37 @@ class _CharacterGateState extends State<_CharacterGate> {
 
 // --- LAYAR LOADING KUSTOM (SPLASH SCREEN) ---
 /// Layar transisi ungu yang indah agar user tidak melihat layar putih/blank saat aplikasi loading
-class _SplashLoading extends StatelessWidget {
+class _SplashLoading extends StatefulWidget {
   const _SplashLoading();
+
+  @override
+  State<_SplashLoading> createState() => _SplashLoadingState();
+}
+
+class _SplashLoadingState extends State<_SplashLoading> with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    // Animasi durasi 1.5 detik berulang bolak-balik (naik-turun)
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    
+    // Ukuran scale dari 90% ke 105% untuk efek "bernafas" (breathing)
+    _pulseAnimation = Tween<double>(begin: 0.9, end: 1.05).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -173,22 +202,80 @@ class _SplashLoading extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF4C1D95), Color(0xFF2E1065), Color(0xFF1E1B4B)],
+            colors: [
+              Color(0xFF2C103F), // Ungu sangat gelap di atas
+              Color(0xFF150A21), // Hampir hitam di tengah
+              Color(0xFF0D0514), // Hitam pekat di bawah (Vibe Dungeon)
+            ],
           ),
         ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset(
-                'lib/assets/logo/Logo_GrindOn.png',
-                width: 150,
-                height: 150,
+              // 1. Logo dengan efek detak (Pulse) & Cahaya Magis (Glow)
+              ScaleTransition(
+                scale: _pulseAnimation,
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFA78BFA).withOpacity(0.4),
+                        blurRadius: 40,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                  ),
+                  child: Image.asset(
+                    'lib/assets/logo/Logo_GrindOn.png',
+                    width: 150,
+                    height: 150,
+                  ),
+                ),
               ),
-              const SizedBox(height: 24),
-              const CircularProgressIndicator(
-                color: Color(0xFFA78BFA),
-                strokeWidth: 3,
+              
+              const SizedBox(height: 60),
+              
+              // 2. Teks Loading gaya RPG (seperti masuk ke realm/dungeon)
+              const Text(
+                "MEMASUKI DUNIA...",
+                style: TextStyle(
+                  color: Color(0xFFD8B4FE),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 6,
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // 3. Bar Loading ala RPG (Mirip Mana/XP Bar)
+              Container(
+                width: 220,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6), // Latar belakang bar
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: const Color(0xFF6D28D9), // Border ungu terang
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6D28D9).withOpacity(0.4),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: const LinearProgressIndicator(
+                    backgroundColor: Colors.transparent,
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFA78BFA)), // Isi bar
+                  ),
+                ),
               ),
             ],
           ),

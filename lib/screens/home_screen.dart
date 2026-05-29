@@ -18,6 +18,7 @@ import 'profile_screen.dart';
 import '../widget/avatar_preview.dart';
 import '../widget/dev_tools_sheet.dart';
 import '../widget/rpg_tutorial_overlay.dart';
+import '../widget/rank_up_overlay.dart';
 import '../widget/rpg_loading.dart';
 import '../widget/active_buffs_widget.dart';
 import '../theme/rpg_theme.dart';
@@ -75,11 +76,13 @@ class _HomeScreenState extends State<HomeScreen> {
   int _xp = 0, _level = 1, _hp = 80, _coin = 0;
   int _maxHp = 100;
   String _rank = 'F';
+  String? _lastRank;
   String _role = 'user';
   int _currentIndex = 0;
   final Map<String, bool> _expandedCats = {};
   Map<String, String> _equippedItems = {};
   Timestamp? _xpBonusUntil;
+  Timestamp? _goldBonusUntil;
   String? _baseBody;
   Offset _godModeOffset = const Offset(
     16,
@@ -115,6 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _equippedItems = Map<String, String>.from(d[UserSchema.equippedItems]);
       }
       _xpBonusUntil = d[UserSchema.xpBonusUntil] as Timestamp?;
+      _goldBonusUntil = d[UserSchema.goldBonusUntil] as Timestamp?;
       _baseBody = d[UserSchema.baseBody] as String?;
       _checkPendingTasksAndNotify(uid);
     });
@@ -227,13 +231,33 @@ class _HomeScreenState extends State<HomeScreen> {
           _maxHp = d[UserSchema.maxHp] ?? 100;
           _coin = d[UserSchema.gold] ?? d['coin'] ?? 0;
           _role = d[UserSchema.role] ?? 'user';
-          _rank = _getRank(d);
+          
+          final newRank = _getRank(d);
+          if (_lastRank != null && _lastRank != newRank && mounted) {
+            final newTitle = RankSystem.getDynamicTitle(
+              d[UserSchema.strengthXp] ?? 0,
+              d[UserSchema.defenseXp] ?? 0,
+              d[UserSchema.intelligenceXp] ?? 0,
+              d[UserSchema.vitalityXp] ?? 0,
+              d[UserSchema.agilityXp] ?? 0,
+              newRank,
+              _level,
+              d[UserSchema.totalTasksDone] ?? 0,
+            );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) RankUpOverlay.show(context, newRank: newRank, title: newTitle);
+            });
+          }
+          _lastRank = newRank;
+          _rank = newRank;
+          
           if (d[UserSchema.equippedItems] != null) {
             _equippedItems = Map<String, String>.from(
               d[UserSchema.equippedItems],
             );
           }
           _xpBonusUntil = d[UserSchema.xpBonusUntil] as Timestamp?;
+          _goldBonusUntil = d[UserSchema.goldBonusUntil] as Timestamp?;
           _baseBody = d[UserSchema.baseBody] as String?;
 
           if (d['tutorialsCompleted'] != null) {
@@ -437,6 +461,7 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(height: 12),
               // Jika sekarat munculkan peringatan, jika aman munculkan kata mutiara
               isCritical ? _buildVitalityAlert() : _buildMotivationCard(),
+              SizedBox(height: 16),
               _buildCategoryBoard(allDocs), // Daftar Kategori (Strength, Agility, dll)
               SizedBox(height: 20),
               Text(
@@ -825,11 +850,12 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Avatar Container menggunakan ThemeCard //
               SizedBox(
-                width: 64,
-                height: 64,
+                width: 84,
+                height: 84,
                 child: ThemeCard(
                   backgroundColor: AppColors.surface,
                   borderRadius: BorderRadius.circular(14),
@@ -843,13 +869,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 child: AvatarPreview(
                   equippedItems: _equippedItems,
-                  size: 64,
+                  size: 84,
                   showBackground: true,
                   baseBody: _baseBody,
                 ),
               ),
               ),
-              SizedBox(width: 12),
+              SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -913,7 +939,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     SizedBox(height: 8),
                     // Active Buffs Row
-                    ActiveBuffsWidget(equippedItems: _equippedItems, xpBonusUntil: _xpBonusUntil),
+                    ActiveBuffsWidget(equippedItems: _equippedItems, xpBonusUntil: _xpBonusUntil, goldBonusUntil: _goldBonusUntil),
                   ],
                 ),
               ),
@@ -977,7 +1003,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          SizedBox(height: 14),
+          SizedBox(height: 8),
           _bar(
             'HP',
             Icons.favorite_rounded,
@@ -986,7 +1012,7 @@ class _HomeScreenState extends State<HomeScreen> {
             eProg,
             AppColors.hp,
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 4),
           _bar(
             'XP',
             Icons.star_rounded,
@@ -1082,54 +1108,89 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // ── Daily Progress (Progres Harian) ──────────────────────────────────
   // Menampilkan kotak dengan progress bar yang menunjukkan persentase misi 
-  // yang telah diselesaikan khusus pada hari ini.
   Widget _buildDailyProgress(int done, int total) {
     // Hindari error pembagian dengan nol (0) jika total task = 0
     final p = total == 0 ? 0.0 : done / total;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: AppColors.cardBackground,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.cardBorder),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.05),
+            blurRadius: 10,
+            spreadRadius: 1,
+          ),
+        ],
       ),
       child: Row(
         children: [
-          Text('🎯', style: TextStyle(fontSize: 16)),
-          SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.flag_rounded,
+              color: AppColors.primary,
+              size: 20,
+            ),
+          ),
+          SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '🎯  ${context.lw.isEn ? 'Today\'s Progress' : 'Progress Hari Ini'}  $done/$total ${context.lw.isEn ? 'task(s)' : 'task'}',
-                  style: GoogleFonts.nunito(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: LinearProgressIndicator(
-                    value: p,
-                    minHeight: 6,
-                    backgroundColor: AppColors.textPrimary.withValues(alpha: 0.10),
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.success,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      context.lw.isEn ? 'Today\'s Progress' : 'Progress Hari Ini',
+                      style: GoogleFonts.nunito(
+                        color: AppColors.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
+                    Text(
+                      '$done/$total ${context.lw.isEn ? 'task(s)' : 'task'}',
+                      style: GoogleFonts.nunito(
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: p,
+                          minHeight: 6,
+                          backgroundColor: AppColors.textPrimary.withValues(alpha: 0.10),
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.success),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      '${(p * 100).toInt()}%',
+                      style: GoogleFonts.nunito(
+                        color: AppColors.success,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ),
-          SizedBox(width: 10),
-          Text(
-            '${(p * 100).toInt()}%',
-            style: GoogleFonts.nunito(
-              color: AppColors.success,
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
             ),
           ),
         ],
@@ -1185,29 +1246,46 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMotivationCard() {
     final l = context.lw;
     final q = l.isEn ? [
-      '🔥 Consistency is the key. Complete one task today!',
-      '⚡ Every small step builds a powerful character.',
-      '🌟 Level up comes not from one effort, but from habit.',
-      '💪 Start first, perfect later.',
+      'Consistency is the key. Complete one task today!',
+      'Every small step builds a powerful character.',
+      'Level up comes not from one effort, but from habit.',
+      'Start first, perfect later.',
     ] : [
-      '🔥 Konsistensi adalah kuncinya. Kerjakan satu task hari ini!',
-      '⚡ Setiap langkah kecil membentuk karakter yang kuat.',
-      '🌟 Level naik bukan dari satu usaha, tapi dari kebiasaan.',
-      '💪 Mulai dulu, sempurna belakangan.',
+      'Konsistensi adalah kuncinya. Kerjakan satu task hari ini!',
+      'Setiap langkah kecil membentuk karakter yang kuat.',
+      'Level naik bukan dari satu usaha, tapi dari kebiasaan.',
+      'Mulai dulu, sempurna belakangan.',
     ];
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.3),
+          color: AppColors.primary.withValues(alpha: 0.2),
         ),
       ),
-      child: Text(
-        q[DateTime.now().day % q.length],
-        style: GoogleFonts.nunito(color: AppColors.textSecondary, fontSize: 12),
+      child: Row(
+        children: [
+          Icon(
+            Icons.lightbulb_outline_rounded,
+            color: AppColors.primary,
+            size: 20,
+          ),
+          SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              q[DateTime.now().day % q.length],
+              style: GoogleFonts.nunito(
+                color: AppColors.textPrimary.withValues(alpha: 0.8),
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

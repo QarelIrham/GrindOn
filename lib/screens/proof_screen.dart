@@ -15,7 +15,7 @@ import '../theme/rpg_theme.dart';
 import '../models/avatar_data.dart';
 import '../services/locale_service.dart';
 import '../theme/app_theme.dart';
-
+import '../widget/celebration_overlay.dart';
 
 class ProofScreen extends StatefulWidget {
   final String taskId;
@@ -155,6 +155,13 @@ class _ProofScreenState extends State<ProofScreen> {
         finalXp *= 2;
       }
 
+      // A2. Cek Item Aktif (Gold Scroll)
+      int baseGold = widget.goldReward;
+      final goldBonusUntil = userData[UserSchema.goldBonusUntil] as Timestamp?;
+      if (goldBonusUntil != null && goldBonusUntil.toDate().isAfter(DateTime.now())) {
+        baseGold *= 2;
+      }
+
       // B. Cek Status Tubuh (HP Penalty)
       // Jika HP user sekarat (misal < 20%), XP yang didapat akan dikurangi (hukuman)
       finalXp = RankSystem.effectiveXp(finalXp, currentHp);
@@ -172,7 +179,7 @@ class _ProofScreenState extends State<ProofScreen> {
 
       // Hitung hasil final sesudah ditambah bonus baju
       finalXp = (finalXp * (1.0 + xpBoost)).round();
-      final int finalGold = (widget.goldReward * (1.0 + goldBoost)).round();
+      final int finalGold = (baseGold * (1.0 + goldBoost)).round();
 
       // Setiap selesai task, HP (Darah) akan terisi sedikit (Healing)
       final int newHp = (currentHp + RankSystem.hpGainOnTaskComplete).clamp(0, maxHp);
@@ -209,7 +216,16 @@ class _ProofScreenState extends State<ProofScreen> {
       });
 
       // 8. Tampilkan Layar Perayaan Selesai!
-      _showQuestCompleteDialog(widget.title, widget.category, finalXp, finalGold);
+      CelebrationOverlay.show(
+        context,
+        title: widget.title,
+        category: widget.category,
+        xp: finalXp,
+        coin: finalGold,
+        userName: _userName,
+        level: _level,
+        equippedItems: _equippedItems,
+      );
     } catch (e) {
       _showSnack(context.l.proofSaveFailed('$e'));
     } finally {
@@ -301,144 +317,6 @@ class _ProofScreenState extends State<ProofScreen> {
 
   String _dateString(DateTime dt) =>
       '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
-
-  // Menampilkan Layar Perayaan Selesai! (Mirip Gacha / Reward Screen)
-  void _showQuestCompleteDialog(String title, String category, int xp, int gold) {
-    final l = context.l;
-    AudioService.playSuccess();
-    final ScreenshotController questScrenshot = ScreenshotController();
-    final color = catColors[category] ?? const Color(0xFF7C3AED);
-    final catLabel = l.catName(category);
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Screenshot(
-              controller: questScrenshot,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Color(0xFF13131A),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: color.withValues(alpha: 0.4), width: 2),
-                  boxShadow: [
-                    BoxShadow(color: color.withValues(alpha: 0.1), blurRadius: 20),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(l.proofQuestComplete, style: GoogleFonts.nunito(
-                      color: color, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2,
-                    )),
-                    SizedBox(height: 16),
-                    Icon(Icons.workspace_premium_rounded, color: Color(0xFFFFD700), size: 64),
-                    SizedBox(height: 16),
-                    Text(title, textAlign: TextAlign.center, style: GoogleFonts.nunito(
-                      color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.bold,
-                    )),
-                    SizedBox(height: 8),
-                    Text(catLabel, style: GoogleFonts.nunito(color: color, fontSize: 13, fontWeight: FontWeight.w700)),
-                    SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _rewardChip('+$xp XP', Color(0xFFF59E0B), Icons.bolt_rounded),
-                        SizedBox(width: 12),
-                        _rewardChip('+$gold Gold', Color(0xFFFFD700), Icons.monetization_on_rounded),
-                      ],
-                    ),
-                    SizedBox(height: 24),
-                    // Mini Avatar
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ClipOval(
-                          child: Container(
-                            width: 40, height: 40,
-                            color: AppColors.textPrimary.withValues(alpha: 0.10),
-                            child: AvatarPreview(equippedItems: _equippedItems, size: 40),
-                          ),
-                        ),
-                        SizedBox(width: 10),
-                        Text('$_userName • Lv.$_level', style: GoogleFonts.nunito(color: AppColors.textPrimary.withValues(alpha: 0.54), fontSize: 12)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).popUntil((r) => r.isFirst);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.textPrimary.withValues(alpha: 0.10),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: Text(l.btnClose, style: GoogleFonts.nunito(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      final image = await questScrenshot.capture();
-                      if (image != null) {
-                        final dir = await getTemporaryDirectory();
-                        final file = await File('${dir.path}/quest_complete.png').create();
-                        await file.writeAsBytes(image);
-                        await Share.shareXFiles(
-                          [XFile(file.path)],
-                          text: '${l.proofShareText}$title${l.proofShareHashtags}',
-                        );
-                      }
-                    },
-                    icon: Icon(Icons.share_rounded, size: 18, color: AppColors.textPrimary),
-                    label: Text('Share', style: GoogleFonts.nunito(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: color,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _rewardChip(String label, Color color, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 14),
-          const SizedBox(width: 6),
-          Text(label, style: GoogleFonts.nunito(color: color, fontWeight: FontWeight.w800, fontSize: 13)),
-        ],
-      ),
-    );
-  }
 
   void _showSnack(String msg) {
     if (!mounted) return;

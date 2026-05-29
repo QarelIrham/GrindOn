@@ -23,7 +23,7 @@ class NotificationService {
     // 1. Pengaturan khusus Android: Kita memberitahu sistem Android logo/icon mana yang
     // dipakai saat notifikasi muncul di bar atas HP (@mipmap/ic_launcher).
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/launcher_icon');
 
     // 2. Pengaturan khusus iOS (Apple): Meminta izin secara pop-up
     // untuk menampilkan Alert (Teks), Badge (Angka merah di icon aplikasi), dan Sound (Suara)
@@ -93,7 +93,7 @@ class NotificationService {
         importance: Importance.high, // Set High agar muncul pop-up menjuntai dari atas layar
         priority: Priority.high,
         showWhen: true,
-        icon: '@mipmap/ic_launcher',
+        icon: '@mipmap/launcher_icon',
         color: Color(0xFF7C3AED), // Warna ungu aksen notifikasi
         enableVibration: true, // Izinkan getar
         playSound: true, // Izinkan bunyi

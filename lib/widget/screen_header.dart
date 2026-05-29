@@ -19,7 +19,10 @@ class ScreenHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-      child: Row(
+      child: SizedBox(
+        height: 36, // Fixed height to prevent layout shifting between tabs
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (onBackPressed != null)
             IconButton(
@@ -57,6 +60,7 @@ class ScreenHeader extends StatelessWidget {
           ),
           if (trailing != null) trailing!,
         ],
+      ),
       ),
     );
   }

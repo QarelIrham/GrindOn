@@ -59,6 +59,16 @@ class _AvatarShopViewState extends State<AvatarShopView> {
   Widget _buildAvatarCategoryTabs() {
     final l = context.l;
     final categories = ['Head', 'Body', 'Pants', 'Body 1 Set', 'Pet', 'Wallpaper'];
+    
+    final categoryIcons = {
+      'Head': Icons.face_retouching_natural_rounded,
+      'Body': Icons.checkroom_rounded,
+      'Pants': Icons.accessibility_new_rounded,
+      'Body 1 Set': Icons.star_rounded,
+      'Pet': Icons.pets_rounded,
+      'Wallpaper': Icons.image_rounded,
+    };
+
     final labels = categories.map((cat) {
       if (cat == 'Body 1 Set') return l.isEn ? '1 Set' : '1 Set';
       if (cat == 'Wallpaper') return l.isEn ? 'Wall' : 'Latar';
@@ -78,20 +88,31 @@ class _AvatarShopViewState extends State<AvatarShopView> {
             onTap: () => setState(() => _selectedAvatarCategory = cat),
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: isSelected ? widget.accentColor.withValues(alpha: 0.2) : widget.cardDark,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: isSelected ? widget.accentColor : widget.cardBorder),
               ),
               alignment: Alignment.center,
-              child: Text(
-                labels[index],
-                style: GoogleFonts.nunito(
-                  color: isSelected ? AppColors.textPrimary : AppColors.textPrimary.withValues(alpha: 0.60),
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  fontSize: 13,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    categoryIcons[cat] ?? Icons.category_rounded,
+                    size: 14,
+                    color: isSelected ? widget.accentColor : AppColors.textPrimary.withValues(alpha: 0.40),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    labels[index],
+                    style: GoogleFonts.nunito(
+                      color: isSelected ? AppColors.textPrimary : AppColors.textPrimary.withValues(alpha: 0.60),
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
               ),
             ),
           );
@@ -206,7 +227,10 @@ class _AvatarShopViewState extends State<AvatarShopView> {
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(color: AppColors.textPrimary.withValues(alpha: 0.3), borderRadius: const BorderRadius.vertical(bottom: Radius.circular(19))),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.45), 
+                          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(19))
+                        ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
