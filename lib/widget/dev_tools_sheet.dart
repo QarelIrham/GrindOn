@@ -244,17 +244,27 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
     
     setState(() => _isLoading = true);
     try {
-      await FirebaseFirestore.instance.collection('tasks').add({
-        'userId': _targetUid,
-        'title': name,
-        'difficulty': _questDifficulty,
-        'category': _questCategory,
-        'proofType': 'none',
-        'isCompleted': false,
-        'status': 'pending',
-        'createdAt': FieldValue.serverTimestamp(),
+      int difficultyInt = 1;
+      switch (_questDifficulty) {
+        case 'easy': difficultyInt = 1; break;
+        case 'medium': difficultyInt = 2; break;
+        case 'hard': difficultyInt = 3; break;
+        case 'epic': difficultyInt = 4; break;
+      }
+
+      await FirebaseFirestore.instance.collection('users').doc(_targetUid).collection('tasks').add({
+        TaskSchema.uid: _targetUid,
+        TaskSchema.title: name,
+        TaskSchema.difficulty: difficultyInt,
+        TaskSchema.category: _questCategory,
+        TaskSchema.proofType: 'none',
+        TaskSchema.done: false,
+        TaskSchema.createdAt: FieldValue.serverTimestamp(),
       });
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Quick Quest Created!')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Quick Quest Created!')));
+        Navigator.pop(context);
+      }
       _questNameCtrl.clear();
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
@@ -606,6 +616,20 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : () async {
+                      await _updateStats();
+                      if (mounted) Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _accentCyan,
+                      elevation: 0,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text('APPLY STATS', style: GoogleFonts.nunito(color: _bgDark, fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 16)),
                   ),
                 ]),
                 

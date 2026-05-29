@@ -19,6 +19,7 @@ import '../widget/avatar_preview.dart';
 import '../widget/dev_tools_sheet.dart';
 import '../widget/rpg_tutorial_overlay.dart';
 import '../widget/rank_up_overlay.dart';
+import '../widget/level_up_overlay.dart';
 import '../widget/rpg_loading.dart';
 import '../widget/active_buffs_widget.dart';
 import '../theme/rpg_theme.dart';
@@ -77,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _maxHp = 100;
   String _rank = 'F';
   String? _lastRank;
+  int? _lastLevel;
   String _role = 'user';
   int _currentIndex = 0;
   final Map<String, bool> _expandedCats = {};
@@ -114,6 +116,8 @@ class _HomeScreenState extends State<HomeScreen> {
       _coin = d[UserSchema.gold] ?? d['coin'] ?? 0;
       _role = d[UserSchema.role] ?? 'user';
       _rank = _getRank(d);
+      _lastRank = _rank;
+      _lastLevel = _level;
       if (d[UserSchema.equippedItems] != null) {
         _equippedItems = Map<String, String>.from(d[UserSchema.equippedItems]);
       }
@@ -233,23 +237,39 @@ class _HomeScreenState extends State<HomeScreen> {
           _role = d[UserSchema.role] ?? 'user';
           
           final newRank = _getRank(d);
-          if (_lastRank != null && _lastRank != newRank && mounted) {
-            final newTitle = RankSystem.getDynamicTitle(
-              d[UserSchema.strengthXp] ?? 0,
-              d[UserSchema.defenseXp] ?? 0,
-              d[UserSchema.intelligenceXp] ?? 0,
-              d[UserSchema.vitalityXp] ?? 0,
-              d[UserSchema.agilityXp] ?? 0,
-              newRank,
-              _level,
-              d[UserSchema.totalTasksDone] ?? 0,
-            );
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) RankUpOverlay.show(context, newRank: newRank, title: newTitle);
-            });
+          final newLevel = d['level'] ?? 1;
+
+          if (mounted) {
+            bool rankChanged = _lastRank != null && _lastRank != newRank;
+            bool levelChanged = _lastLevel != null && _lastLevel != newLevel;
+            
+            if (rankChanged || levelChanged) {
+              final newTitle = RankSystem.getDynamicTitle(
+                d[UserSchema.strengthXp] ?? 0,
+                d[UserSchema.defenseXp] ?? 0,
+                d[UserSchema.intelligenceXp] ?? 0,
+                d[UserSchema.vitalityXp] ?? 0,
+                d[UserSchema.agilityXp] ?? 0,
+                newRank,
+                newLevel,
+                d[UserSchema.totalTasksDone] ?? 0,
+              );
+
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  if (rankChanged) {
+                    RankUpOverlay.show(context, newRank: newRank, title: newTitle);
+                  } else if (levelChanged) {
+                    LevelUpOverlay.show(context, newLevel: newLevel, title: newTitle);
+                  }
+                }
+              });
+            }
           }
+
           _lastRank = newRank;
           _rank = newRank;
+          _lastLevel = newLevel;
           
           if (d[UserSchema.equippedItems] != null) {
             _equippedItems = Map<String, String>.from(

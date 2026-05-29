@@ -270,8 +270,7 @@ class RankSystem {
 
   // ─ Rank dari Level & Stat ──────────────────────────
   static String calculateRank(int level, {int str = 0, int def = 0, int intl = 0, int vit = 0, int agi = 0}) {
-    bool maxStats = str >= 9999 && def >= 9999 && intl >= 9999 && vit >= 9999 && agi >= 9999;
-    if (level >= 150 && maxStats) return 'SSR'; // Mythical (Mentok semua)
+    if (level >= 150) return 'SSR'; // Mythical
     if (level >= 121) return 'SSS'; // Endgame
     if (level >= 91) return 'SS'; // Prestige
     if (level >= 71) return 'S'; // Late game
