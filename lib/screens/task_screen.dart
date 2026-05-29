@@ -1,12 +1,19 @@
+import '../services/app_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../viewmodels/task_viewmodel.dart';
+import '../viewmodels/home_viewmodel.dart';
 import 'add_task_screen.dart';
 import '../models/app_schema.dart';
 import '../services/notification_service.dart';
+import '../widget/celebration_overlay.dart';
 import '../widget/theme_card.dart';
+import '../widget/active_buffs_widget.dart';
+import 'focus_timer_screen.dart';
 import '../theme/rpg_theme.dart';
 import '../theme/app_theme.dart';
 
@@ -148,7 +155,7 @@ class _TaskScreenState extends State<TaskScreen> with TickerProviderStateMixin {
   // Bagian atas layar yang bisa mengecil saat di-scroll ke bawah.
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 130,
+      expandedHeight: 140,
       pinned: true,
       backgroundColor: Color(0xFF0D0D1A),
       leading: IconButton(
@@ -198,6 +205,11 @@ class _TaskScreenState extends State<TaskScreen> with TickerProviderStateMixin {
                           color: AppColors.textPrimary.withValues(alpha: 0.54),
                           fontSize: 13,
                         ),
+                      ),
+                      const SizedBox(height: 4),
+                      ActiveBuffsWidget(
+                        equippedItems: context.watch<HomeViewModel>().equippedItems,
+                        xpBonusUntil: context.watch<HomeViewModel>().xpBonusUntil,
                       ),
                     ],
                   ),

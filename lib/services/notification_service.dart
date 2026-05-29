@@ -141,8 +141,8 @@ class NotificationService {
   Future<void> showQuestReminder() async {
     await showNotification(
       id: 1,
-      title: '🎯 Quest Reminder',
-      body: 'You have 3 pending quests! Complete them to earn rewards.',
+      title: 'Quest Log Update',
+      body: 'Pending quests await your action, Adventurer! Embark now and claim your glory.',
       payload: 'quest_reminder',
     );
   }
@@ -151,8 +151,8 @@ class NotificationService {
   Future<void> showDeadlineAlert() async {
     await showNotification(
       id: 2,
-      title: '⚠️ Deadline Alert',
-      body: 'Task "Morning Workout" deadline in 1 hour!',
+      title: 'Time is Running Out',
+      body: 'The hourglass empties! A quest deadline nears its inevitable end.',
       payload: 'deadline_alert',
     );
   }
@@ -161,8 +161,8 @@ class NotificationService {
   Future<void> showStreakAlert() async {
     await showNotification(
       id: 3,
-      title: '🔥 Streak Alert',
-      body: 'Don\'t break your 7-day streak! Complete at least 1 task today.',
+      title: 'Unbroken Will',
+      body: 'Do not let your streak shatter. Complete a quest today to keep your spirit alive.',
       payload: 'streak_alert',
     );
   }
@@ -171,8 +171,8 @@ class NotificationService {
   Future<void> showLevelUp() async {
     await showNotification(
       id: 4,
-      title: '⭐ Level Up!',
-      body: 'Congratulations! You reached Level 10!',
+      title: 'Ascension Achieved',
+      body: 'Your power grows! You have successfully ascended to a new level.',
       payload: 'level_up',
     );
   }
@@ -181,8 +181,8 @@ class NotificationService {
   Future<void> showGoldEarned() async {
     await showNotification(
       id: 5,
-      title: '💰 Gold Earned',
-      body: 'You earned 50 Gold from completing "Study Flutter"!',
+      title: 'Spoils of War',
+      body: 'You have claimed your Gold rewards. Spend your treasures wisely at the merchant.',
       payload: 'gold_earned',
     );
   }
@@ -191,8 +191,8 @@ class NotificationService {
   Future<void> showAchievementUnlocked() async {
     await showNotification(
       id: 6,
-      title: '🏆 Achievement Unlocked',
-      body: 'New badge: "Warrior" - Complete 10 STR tasks!',
+      title: 'New Title Earned',
+      body: 'You have unlocked a new badge. The realm recognizes your great deeds.',
       payload: 'achievement_unlocked',
     );
   }

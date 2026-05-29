@@ -3,14 +3,24 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/app_schema.dart';
-import '../services/audio_service.dart';
+import '../models/title_system.dart';
 import '../services/notification_service.dart';
 import '../screens/onboarding_screen.dart';
-import '../theme/app_theme.dart';
+import 'dart:math';
 
-// ── Panel God Mode (Dev Tools Sheet) ────────────────────────────
-// Fitur khusus developer untuk memodifikasi stat akun secara instan.
-// Bisa menambah/mengurangi Gold, XP, HP, reset inventory, dan demo notifikasi.
+// Flat Minimalist Colors
+const Color _bgDark = Color(0xFF121824);
+const Color _cardBg = Color(0xFF1F293D);
+const Color _accentPurple = Color(0xFF8B5CF6);
+const Color _accentCyan = Color(0xFF06B6D4);
+const Color _textWhite = Color(0xFFFFFFFF);
+const Color _textMuted = Color(0xFF9CA3AF);
+
+const Color _flatRed = Color(0xFFEF4444);
+const Color _flatAmber = Color(0xFFF59E0B);
+const Color _flatGreen = Color(0xFF10B981);
+const Color _flatBlue = Color(0xFF3B82F6);
+
 class DevToolsSheet extends StatefulWidget {
   final Map<String, dynamic> userData;
   final VoidCallback onUpdated;
@@ -26,962 +36,732 @@ class DevToolsSheet extends StatefulWidget {
 }
 
 class _DevToolsSheetState extends State<DevToolsSheet> {
-  late TextEditingController _goldCtrl;
-  late TextEditingController _levelCtrl;
-  late TextEditingController _xpCtrl;
-  bool _isLoading = false;
-  String _selectedTier = 'E';
+  // Target Selection
+  final TextEditingController _targetUsernameCtrl = TextEditingController();
+  String _targetUid = '';
+  
+  // Data Utama
+  final TextEditingController _goldCtrl = TextEditingController();
+  final TextEditingController _levelCtrl = TextEditingController();
+  final TextEditingController _xpCtrl = TextEditingController();
+  int _hp = 100;
 
-  final Map<String, int> _tierLevels = {
-    'F': 1,
-    'E': 6,
-    'D': 11,
-    'C': 21,
-    'B': 36,
-    'A': 51,
-    'S': 71,
-    'SS': 91,
-    'SSS': 121,
-  };
+  // Stat Kualifikasi
+  final TextEditingController _strCtrl = TextEditingController();
+  final TextEditingController _intCtrl = TextEditingController();
+  final TextEditingController _agiCtrl = TextEditingController();
+  final TextEditingController _vitCtrl = TextEditingController();
+  final TextEditingController _defCtrl = TextEditingController();
+  
+  bool _isLoading = false;
+  String _rankName = 'F';
+
+  final List<String> _rankOptions = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSR'];
+
+  // Quick Quest
+  final TextEditingController _questNameCtrl = TextEditingController();
+  String _questDifficulty = 'easy';
+  String _questCategory = 'Strength';
 
   @override
   void initState() {
     super.initState();
-    _goldCtrl = TextEditingController(
-      text: widget.userData[UserSchema.gold]?.toString() ?? '0',
-    );
-    _levelCtrl = TextEditingController(
-      text: widget.userData[UserSchema.level]?.toString() ?? '1',
-    );
-    _xpCtrl = TextEditingController(
-      text: widget.userData[UserSchema.xp]?.toString() ?? '0',
-    );
-    _selectedTier = RankSystem.rankFromLevel(
-      widget.userData[UserSchema.level] ?? 1,
-    );
+    _loadFromData(widget.userData, FirebaseAuth.instance.currentUser?.uid ?? '');
+  }
+
+  void _loadFromData(Map<String, dynamic> data, String uid) {
+    _targetUid = uid;
+    setState(() {
+      _goldCtrl.text = (data[UserSchema.gold]?.toString()) ?? '0';
+      _levelCtrl.text = (data[UserSchema.level]?.toString()) ?? '1';
+      _xpCtrl.text = (data[UserSchema.xp]?.toString()) ?? '0';
+      
+      // Ensure HP parses safely
+      var hpData = data[UserSchema.hp];
+      if (hpData is int) _hp = hpData;
+      else if (hpData is double) _hp = hpData.toInt();
+      else if (hpData is String) _hp = int.tryParse(hpData) ?? 100;
+      else _hp = 100;
+
+      _strCtrl.text = (data[UserSchema.strengthXp]?.toString()) ?? '0';
+      _intCtrl.text = (data[UserSchema.intelligenceXp]?.toString()) ?? '0';
+      _agiCtrl.text = (data[UserSchema.agilityXp]?.toString()) ?? '0';
+      _vitCtrl.text = (data[UserSchema.vitalityXp]?.toString()) ?? '0';
+      _defCtrl.text = (data[UserSchema.defenseXp]?.toString()) ?? '0';
+      
+      // Automatically detect rank from the database rank, or derive from level
+      String? savedRank = data[UserSchema.rank] as String?;
+      if (savedRank != null && _rankOptions.contains(savedRank)) {
+        _rankName = savedRank;
+      } else {
+        _syncRankFromLevel(int.tryParse(_levelCtrl.text) ?? 1);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _targetUsernameCtrl.dispose();
+    _questNameCtrl.dispose();
     _goldCtrl.dispose();
     _levelCtrl.dispose();
     _xpCtrl.dispose();
+    _strCtrl.dispose();
+    _intCtrl.dispose();
+    _agiCtrl.dispose();
+    _vitCtrl.dispose();
+    _defCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _updateStats() async {
+  void _syncRankFromLevel(int lvl) {
+    if (lvl >= 150) {
+      _rankName = 'SSR';
+    } else if (lvl >= 100) {
+      _rankName = 'SS';
+    } else if (lvl >= 70) {
+      _rankName = 'S';
+    } else if (lvl >= 50) {
+      _rankName = 'A';
+    } else if (lvl >= 40) {
+      _rankName = 'B';
+    } else if (lvl >= 30) {
+      _rankName = 'C';
+    } else if (lvl >= 20) {
+      _rankName = 'D';
+    } else if (lvl >= 10) {
+      _rankName = 'E';
+    } else {
+      _rankName = 'F';
+    }
+  }
+
+  void _onRankChanged(String? newRank) {
+    if (newRank == null) return;
+    setState(() {
+      _rankName = newRank;
+      if (newRank == 'SSR') _levelCtrl.text = '150';
+      else if (newRank == 'SS') _levelCtrl.text = '100';
+      else if (newRank == 'S') _levelCtrl.text = '70';
+      else if (newRank == 'A') _levelCtrl.text = '50';
+      else if (newRank == 'B') _levelCtrl.text = '40';
+      else if (newRank == 'C') _levelCtrl.text = '30';
+      else if (newRank == 'D') _levelCtrl.text = '20';
+      else if (newRank == 'E') _levelCtrl.text = '10';
+      else if (newRank == 'F') _levelCtrl.text = '1';
+    });
+  }
+
+  Future<void> _syncTargetUser() async {
+    String username = _targetUsernameCtrl.text.trim();
     setState(() => _isLoading = true);
     try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) return;
+      if (username.isEmpty) {
+        // Fallback to current user
+        final uid = FirebaseAuth.instance.currentUser?.uid;
+        if (uid != null) {
+          final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+          if (doc.exists) {
+            _loadFromData(doc.data() as Map<String, dynamic>, uid);
+            if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data Diri Sendiri Berhasil Dimuat!')));
+          }
+        }
+      } else {
+        // Query by username. Make case insensitive if possible by checking lowercase
+        username = username.toLowerCase();
+        var snapshot = await FirebaseFirestore.instance.collection('users').where('username', isEqualTo: username).limit(1).get();
+        
+        // If not found, try original case
+        if (snapshot.docs.isEmpty) {
+           snapshot = await FirebaseFirestore.instance.collection('users').where('username', isEqualTo: _targetUsernameCtrl.text.trim()).limit(1).get();
+        }
 
-      final oldLevel = widget.userData[UserSchema.level] ?? 1;
-      final oldRank = RankSystem.rankFromLevel(oldLevel);
-      final newLevel = int.tryParse(_levelCtrl.text) ?? 1;
-      final newRank = RankSystem.rankFromLevel(newLevel);
-
-      await FirebaseFirestore.instance.collection('users').doc(uid).update({
-        UserSchema.gold: int.tryParse(_goldCtrl.text) ?? 0,
-        UserSchema.level: newLevel,
-        UserSchema.xp: int.tryParse(_xpCtrl.text) ?? 0,
-        UserSchema.hp: 100,
-      });
-
-      widget.onUpdated();
-
-      if (mounted) {
-        if (newLevel > oldLevel || newRank != oldRank) {
-          AudioService.playLevelUp();
-          _showLevelUpPopup(oldLevel, newLevel, oldRank, newRank);
+        if (snapshot.docs.isNotEmpty) {
+          final doc = snapshot.docs.first;
+          _loadFromData(doc.data(), doc.id);
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data Berhasil Dimuat!')));
         } else {
-          Navigator.pop(context);
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User tidak ditemukan!')));
         }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _showLevelUpPopup(int oldLv, int newLv, String oldR, String newR) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.cardBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: BorderSide(
-            color: Colors.amber.withValues(alpha: 0.5),
-            width: 2,
+  Future<void> _updateStats() async {
+    if (_targetUid.isEmpty) return;
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(_targetUid).update({
+        UserSchema.gold: int.tryParse(_goldCtrl.text) ?? 0,
+        UserSchema.level: int.tryParse(_levelCtrl.text) ?? 1,
+        UserSchema.xp: int.tryParse(_xpCtrl.text) ?? 0,
+        UserSchema.hp: _hp,
+        UserSchema.rank: _rankName,
+      });
+
+      widget.onUpdated();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _updateKualifikasi() async {
+    if (_targetUid.isEmpty) return;
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(_targetUid).update({
+        UserSchema.strengthXp: int.tryParse(_strCtrl.text) ?? 0,
+        UserSchema.intelligenceXp: int.tryParse(_intCtrl.text) ?? 0,
+        UserSchema.agilityXp: int.tryParse(_agiCtrl.text) ?? 0,
+        UserSchema.vitalityXp: int.tryParse(_vitCtrl.text) ?? 0,
+        UserSchema.defenseXp: int.tryParse(_defCtrl.text) ?? 0,
+      });
+
+      widget.onUpdated();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _createQuickQuest() async {
+    final name = _questNameCtrl.text.trim();
+    if (name.isEmpty || _targetUid.isEmpty) return;
+    
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseFirestore.instance.collection('tasks').add({
+        'userId': _targetUid,
+        'title': name,
+        'difficulty': _questDifficulty,
+        'category': _questCategory,
+        'proofType': 'none',
+        'isCompleted': false,
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Quick Quest Created!')));
+      _questNameCtrl.clear();
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  String get _currentGelar {
+    return TitleSystem.getPlayerTitle(
+      rank: _rankName,
+      categoryXp: {
+        'Strength': int.tryParse(_strCtrl.text) ?? 0,
+        'Defense': int.tryParse(_defCtrl.text) ?? 0,
+        'Intelligence': int.tryParse(_intCtrl.text) ?? 0,
+        'Vitality': int.tryParse(_vitCtrl.text) ?? 0,
+        'Agility': int.tryParse(_agiCtrl.text) ?? 0,
+      },
+      level: int.tryParse(_levelCtrl.text) ?? 1,
+    );
+  }
+
+  Widget _buildCard(String title, List<Widget> children) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: GoogleFonts.nunito(color: _textWhite, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+          const SizedBox(height: 16),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputRow(String label, TextEditingController ctrl, {int step = 1, bool showButtons = true, IconData? icon, Color iconColor = _textWhite}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: GoogleFonts.nunito(color: _textMuted, fontSize: 13, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              if (showButtons)
+                InkWell(
+                  onTap: () {
+                    int val = int.tryParse(ctrl.text) ?? 0;
+                    ctrl.text = max(0, val - step).toString();
+                    setState(() {});
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _bgDark,
+                    ),
+                    child: const Icon(Icons.remove, color: _flatRed, size: 20),
+                  ),
+                ),
+              if (showButtons) const SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: _bgDark,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      if (icon != null) ...[
+                        Icon(icon, color: iconColor, size: 20),
+                        const SizedBox(width: 12),
+                      ],
+                      Expanded(
+                        child: TextField(
+                          controller: ctrl,
+                          keyboardType: TextInputType.number,
+                          style: GoogleFonts.nunito(color: _textWhite, fontSize: 16, fontWeight: FontWeight.bold),
+                          decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.zero),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (showButtons) const SizedBox(width: 12),
+              if (showButtons)
+                InkWell(
+                  onTap: () {
+                    int val = int.tryParse(ctrl.text) ?? 0;
+                    ctrl.text = (val + step).toString();
+                    setState(() {});
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: _bgDark,
+                    ),
+                    child: const Icon(Icons.add, color: _flatGreen, size: 20),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChip(String label, String value, String groupValue, ValueChanged<String> onSelected) {
+    final isSelected = value == groupValue;
+    return InkWell(
+      onTap: () => onSelected(value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? _accentPurple : _bgDark,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.nunito(
+            color: isSelected ? _textWhite : _textMuted,
+            fontWeight: FontWeight.bold,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildQuickBtn(String label, IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: _bgDark,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color, width: 1.5),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 8),
+            Text(label, textAlign: TextAlign.center, style: GoogleFonts.nunito(color: _textWhite, fontWeight: FontWeight.w800, fontSize: 11)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _testNotificationDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        title: Text('Test Notifikasi', style: GoogleFonts.nunito(color: _textWhite, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('✨', style: TextStyle(fontSize: 40)),
-            Text(
-              newR != oldR ? 'RANK UP!' : 'LEVEL UP!',
-              style: GoogleFonts.nunito(
-                color: Colors.amber,
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2,
-              ),
-            ),
-            SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _levelBadge(oldLv, oldR, AppColors.textPrimary.withValues(alpha: 0.24)),
-                Icon(Icons.arrow_forward_rounded, color: AppColors.textPrimary.withValues(alpha: 0.38)),
-                _levelBadge(newLv, newR, Colors.amber),
-              ],
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
+            ListTile(
+              leading: const Icon(Icons.notifications, color: _accentCyan),
+              title: Text('System Alert', style: GoogleFonts.nunito(color: _textWhite)),
+              subtitle: Text('Ini adalah notifikasi test', style: GoogleFonts.nunito(color: _textMuted)),
+              onTap: () {
+                NotificationService().showNotification(id: 0, title: 'SYSTEM ALERT', body: 'Ini adalah notifikasi simulasi dari God Mode');
                 Navigator.pop(ctx);
-                Navigator.pop(context);
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 12,
-                ),
-              ),
-              child: Text(
-                'MANTAP!',
-                style: GoogleFonts.nunito(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            )
           ],
         ),
       ),
     );
-  }
-
-  Widget _levelBadge(int lv, String rank, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        children: [
-          Text(
-            rank,
-            style: GoogleFonts.nunito(
-              color: color,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            'Lv.$lv',
-            style: GoogleFonts.nunito(
-              color: color.withValues(alpha: 0.7),
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _addGold(int amount) async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    final currentGold = int.tryParse(_goldCtrl.text) ?? 0;
-    final newGold = currentGold + amount;
-
-    await FirebaseFirestore.instance.collection('users').doc(uid).update({
-      UserSchema.gold: newGold,
-    });
-
-    if (mounted) {
-      setState(() {
-        _goldCtrl.text = newGold.toString();
-      });
-      AudioService.playClick();
-      widget.onUpdated();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Added $amount Gold! 💰'),
-          duration: const Duration(milliseconds: 500),
-          backgroundColor: Colors.amber,
-        ),
-      );
-    }
-  }
-
-  Future<void> _addXP(int amount) async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-
-    final currentXP = int.tryParse(_xpCtrl.text) ?? 0;
-    final newXP = currentXP + amount;
-    final currentLv = int.tryParse(_levelCtrl.text) ?? 1;
-
-    // Simple level up logic for God Mode:
-    // Every 100 XP added via this button can trigger a level up check if desired,
-    // but let's make it follow the _xpNext logic.
-    int xpNeeded = 100 + (currentLv - 1) * 50;
-    int newLv = currentLv;
-    int tempXP = newXP;
-
-    // Calculate new level based on cumulative XP logic
-    // (Assuming level up happens when XP >= threshold for current level)
-    if (tempXP >= xpNeeded) {
-      newLv++;
-    }
-
-    await FirebaseFirestore.instance.collection('users').doc(uid).update({
-      UserSchema.xp: newXP,
-      UserSchema.level: newLv,
-    });
-
-    if (mounted) {
-      setState(() {
-        _xpCtrl.text = newXP.toString();
-        _levelCtrl.text = newLv.toString();
-      });
-
-      if (newLv > currentLv) {
-        AudioService.playLevelUp();
-        final oldRank = RankSystem.rankFromLevel(currentLv);
-        final newRank = RankSystem.rankFromLevel(newLv);
-        _showLevelUpPopup(currentLv, newLv, oldRank, newRank);
-      } else {
-        AudioService.playClick();
-      }
-
-      widget.onUpdated();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Added $amount XP! ${newLv > currentLv ? 'LEVEL UP!' : ''}',
-          ),
-          duration: const Duration(milliseconds: 500),
-          backgroundColor: Colors.blueAccent,
-        ),
-      );
-    }
-  }
-
-  Future<void> _resetXP() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    await FirebaseFirestore.instance.collection('users').doc(uid).update({
-      UserSchema.xp: 0,
-    });
-    if (mounted) {
-      setState(() {
-        _xpCtrl.text = '0';
-      });
-      AudioService.playClick();
-      widget.onUpdated();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('XP Reset to 0!'),
-          duration: Duration(milliseconds: 800),
-          backgroundColor: Colors.orangeAccent,
-        ),
-      );
-    }
-  }
-
-  Future<void> _forceLevelUp() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    final currentLv = int.tryParse(_levelCtrl.text) ?? 1;
-    final newLv = currentLv + 1;
-
-    await FirebaseFirestore.instance.collection('users').doc(uid).update({
-      UserSchema.level: newLv,
-      UserSchema.hp: 100,
-    });
-
-    if (mounted) {
-      setState(() {
-        _levelCtrl.text = newLv.toString();
-      });
-      AudioService.playLevelUp();
-      widget.onUpdated();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Level UP! 🚀'),
-          duration: Duration(milliseconds: 800),
-          backgroundColor: Colors.purpleAccent,
-        ),
-      );
-    }
-  }
-
-  Future<void> _resetLevel() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    await FirebaseFirestore.instance.collection('users').doc(uid).update({
-      UserSchema.level: 1,
-      UserSchema.xp: 0,
-      UserSchema.hp: 100,
-    });
-
-    if (mounted) {
-      setState(() {
-        _levelCtrl.text = '1';
-        _xpCtrl.text = '0';
-      });
-      AudioService.playClick();
-      widget.onUpdated();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Level & XP Reset!'),
-          duration: Duration(milliseconds: 800),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-    }
-  }
-
-  Future<void> _reduceHP(int amount) async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    await FirebaseFirestore.instance.collection('users').doc(uid).update({
-      UserSchema.hp: FieldValue.increment(-amount),
-    });
-    AudioService.playFail();
-    widget.onUpdated();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('HP Reduced by $amount! 💔'),
-          duration: const Duration(milliseconds: 800),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  Future<void> _demoTutorial() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    
-    await FirebaseFirestore.instance.collection('users').doc(uid).update({
-      'tutorialsCompleted': {
-        'home': false,
-        'daily': false,
-        'stats': false,
-        'profile': false,
-        'addTask': false,
-        'leaderboard': false,
-      }
-    });
-
-    if (mounted) {
-      AudioService.playClick();
-      widget.onUpdated();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Panduan xqvx The Creator siap diperagakan! 🎭'),
-          duration: Duration(milliseconds: 1500),
-          backgroundColor: Color(0xFFD4AF37),
-        ),
-      );
-      Navigator.pop(context); // Close dev tools bottom sheet
-    }
-  }
-
-  Future<void> _testNotification() async {
-    if (!mounted) return;
-    
-    AudioService.playClick();
-    
-    // Initialize notification service
-    final notificationService = NotificationService();
-    await notificationService.initialize();
-    
-    // Show notification selection dialog
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.cardBackground,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: Colors.tealAccent.withValues(alpha: 0.5),
-            width: 2,
-          ),
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.notifications_active, color: Colors.tealAccent),
-            SizedBox(width: 12),
-            Text(
-              'Test Notifications',
-              style: GoogleFonts.nunito(
-                color: AppColors.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Pilih notifikasi untuk demo:\n(Akan muncul di notification bar HP)',
-                style: GoogleFonts.nunito(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              _buildNotificationOption(
-                ctx,
-                '🎯 Quest Reminder',
-                'You have 3 pending quests!',
-                Colors.blueAccent,
-                () async {
-                  Navigator.pop(ctx);
-                  await notificationService.showQuestReminder();
-                  _showSuccessSnackbar('Quest Reminder sent! Check notification bar 🔔');
-                },
-              ),
-              _buildNotificationOption(
-                ctx,
-                '⚠️ Deadline Alert',
-                'Task deadline in 1 hour!',
-                Colors.orangeAccent,
-                () async {
-                  Navigator.pop(ctx);
-                  await notificationService.showDeadlineAlert();
-                  _showSuccessSnackbar('Deadline Alert sent! Check notification bar 🔔');
-                },
-              ),
-              _buildNotificationOption(
-                ctx,
-                '🔥 Streak Alert',
-                'Don\'t break your streak!',
-                Colors.redAccent,
-                () async {
-                  Navigator.pop(ctx);
-                  await notificationService.showStreakAlert();
-                  _showSuccessSnackbar('Streak Alert sent! Check notification bar 🔔');
-                },
-              ),
-              _buildNotificationOption(
-                ctx,
-                '⭐ Level Up',
-                'You reached Level 10!',
-                Colors.purpleAccent,
-                () async {
-                  Navigator.pop(ctx);
-                  await notificationService.showLevelUp();
-                  _showSuccessSnackbar('Level Up sent! Check notification bar 🔔');
-                },
-              ),
-              _buildNotificationOption(
-                ctx,
-                '💰 Gold Earned',
-                'You earned 50 Gold!',
-                Colors.amber,
-                () async {
-                  Navigator.pop(ctx);
-                  await notificationService.showGoldEarned();
-                  _showSuccessSnackbar('Gold Earned sent! Check notification bar 🔔');
-                },
-              ),
-              _buildNotificationOption(
-                ctx,
-                '🏆 Achievement',
-                'New badge unlocked!',
-                Colors.greenAccent,
-                () async {
-                  Navigator.pop(ctx);
-                  await notificationService.showAchievementUnlocked();
-                  _showSuccessSnackbar('Achievement sent! Check notification bar 🔔');
-                },
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    _showSuccessSnackbar('Sending all notifications... Check notification bar! 🔔');
-                    await notificationService.showAllDemoNotifications();
-                  },
-                  icon: Icon(Icons.all_inclusive, size: 18),
-                  label: Text(
-                    'Send All (2s delay)',
-                    style: GoogleFonts.nunito(fontWeight: FontWeight.bold),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.tealAccent,
-                    foregroundColor: AppColors.textPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNotificationOption(
-    BuildContext ctx,
-    String title,
-    String message,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: color.withValues(alpha: 0.3),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.notifications,
-                color: color,
-                size: 20,
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.nunito(
-                        color: AppColors.textPrimary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      message,
-                      style: GoogleFonts.nunito(
-                        color: AppColors.textPrimary.withValues(alpha: 0.60),
-                        fontSize: 10,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showSuccessSnackbar(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.check_circle, color: AppColors.textPrimary, size: 20),
-            SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                message,
-                style: GoogleFonts.nunito(
-                  color: AppColors.textPrimary,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.tealAccent.withValues(alpha: 0.9),
-        duration: const Duration(seconds: 3),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _resetShop() async {
-    setState(() => _isLoading = true);
-    try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid == null) return;
-
-      await FirebaseFirestore.instance.collection('users').doc(uid).update({
-        UserSchema.unlockedItems: [
-          'none',
-          'default',
-          'peasant_shirt',
-          'peasant_pants',
-        ],
-        UserSchema.inventory: {},
-        UserSchema.equippedItems: {
-          'head': 'none',
-          'clothes': 'peasant_shirt',
-          'pants': 'peasant_pants',
-          'pet': 'none',
-          'background': 'default',
-        },
-      });
-
-      if (mounted) {
-        AudioService.playClick();
-        widget.onUpdated();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Shop Reset! All items locked.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: AppColors.cardBackground,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      height: MediaQuery.of(context).size.height * 0.95,
+      decoration: const BoxDecoration(
+        color: _bgDark,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.bolt, color: Colors.amber, size: 28),
-                SizedBox(width: 12),
-                Text(
-                  'GOD MODE PANEL',
-                  style: GoogleFonts.nunito(
-                    color: AppColors.textPrimary,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 24),
-            _buildTierSelector(),
-            SizedBox(height: 16),
-            _buildInput('Set Gold', _goldCtrl, Icons.monetization_on),
-            SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildInput('Level', _levelCtrl, Icons.trending_up),
-                ),
-                SizedBox(width: 16),
-                Expanded(child: _buildInput('Total XP', _xpCtrl, Icons.star)),
-              ],
-            ),
-            SizedBox(height: 24),
-            Text(
-              'QUICK CHEATS',
-              style: GoogleFonts.nunito(
-                color: AppColors.textPrimary.withValues(alpha: 0.54),
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
+      child: Column(
+        children: [
+          // Top Bar Indicator
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+            child: Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: _cardBg, borderRadius: BorderRadius.circular(2)),
               ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildCheatButton(
-                    label: '+100 XP',
-                    icon: Icons.add_circle_outline,
-                    color: Colors.blueAccent,
-                    onTap: () => _addXP(100),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildCheatButton(
-                    label: '+1000 Gold',
-                    icon: Icons.monetization_on,
-                    color: Colors.amber,
-                    onTap: () => _addGold(1000),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildCheatButton(
-                    label: 'RESET XP',
-                    icon: Icons.refresh,
-                    color: Colors.orangeAccent,
-                    onTap: _resetXP,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Spacer(),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildCheatButton(
-                    label: 'LEVEL UP',
-                    icon: Icons.upgrade,
-                    color: Colors.purpleAccent,
-                    onTap: _forceLevelUp,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildCheatButton(
-                    label: 'RESET LEVEL',
-                    icon: Icons.restart_alt,
-                    color: Colors.redAccent,
-                    onTap: _resetLevel,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildCheatButton(
-                    label: '-20 HP',
-                    icon: Icons.heart_broken,
-                    color: Colors.red,
-                    onTap: () => _reduceHP(20),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildCheatButton(
-                    label: 'DEMO ONBOARDING',
-                    icon: Icons.slideshow,
-                    color: Colors.cyanAccent,
-                    onTap: () {
-                      Navigator.pop(context); // Close bottom sheet
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const OnboardingScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildCheatButton(
-                    label: 'DEMO TUTORIAL',
-                    icon: Icons.help_outline_rounded,
-                    color: Color(0xFFD4AF37),
-                    onTap: _demoTutorial,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: _buildCheatButton(
-                    label: 'TEST NOTIF',
-                    icon: Icons.notifications_active,
-                    color: Colors.tealAccent,
-                    onTap: _testNotification,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _updateStats,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  'APPLY CHANGES',
-                  style: GoogleFonts.nunito(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton.icon(
-                onPressed: _isLoading ? null : _resetShop,
-                icon: const Icon(Icons.refresh, color: Colors.redAccent),
-                label: Text(
-                  'RESET SHOP (Lock All Items)',
-                  style: GoogleFonts.nunito(
-                    color: Colors.redAccent,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCheatButton({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.nunito(
-                color: color,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInput(String label, TextEditingController ctrl, IconData icon) {
-    return TextField(
-      controller: ctrl,
-      keyboardType: TextInputType.number,
-      style: TextStyle(color: AppColors.textPrimary),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: AppColors.textPrimary.withValues(alpha: 0.54)),
-        prefixIcon: Icon(icon, color: Colors.amber, size: 20),
-        filled: true,
-        fillColor: AppColors.textPrimary.withValues(alpha: 0.26),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTierSelector() {
-    return DropdownButtonFormField<String>(
-      value: _selectedTier,
-      dropdownColor: AppColors.cardBackground,
-      style: TextStyle(color: AppColors.textPrimary),
-      decoration: InputDecoration(
-        labelText: 'Select Tier / Rank',
-        labelStyle: TextStyle(color: AppColors.textPrimary.withValues(alpha: 0.54)),
-        prefixIcon: Icon(
-          Icons.military_tech,
-          color: Colors.amber,
-          size: 20,
-        ),
-        filled: true,
-        fillColor: AppColors.textPrimary.withValues(alpha: 0.26),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-      ),
-      items: _tierLevels.keys.map((String rank) {
-        return DropdownMenuItem<String>(
-          value: rank,
-          child: Text(
-            'Rank $rank',
-            style: GoogleFonts.nunito(fontWeight: FontWeight.bold),
           ),
-        );
-      }).toList(),
-      onChanged: (String? newValue) {
-        if (newValue != null) {
-          setState(() {
-            _selectedTier = newValue;
-            _levelCtrl.text = _tierLevels[newValue].toString();
-          });
-        }
-      },
+          
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              children: [
+                
+                // DATA UTAMA CARD
+                _buildCard('PLAYER STATS', [
+                  // TARGET USER
+                  Text('Target User', style: GoogleFonts.nunito(color: _textMuted, fontSize: 13, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _bgDark,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.person_search, color: _textMuted, size: 20),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextField(
+                                  controller: _targetUsernameCtrl,
+                                  style: GoogleFonts.nunito(color: _textWhite, fontSize: 15, fontWeight: FontWeight.w600),
+                                  decoration: InputDecoration(
+                                    hintText: 'Ketik username tanpa @',
+                                    hintStyle: GoogleFonts.nunito(color: _textMuted, fontSize: 14),
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      InkWell(
+                        onTap: _syncTargetUser,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: _accentPurple,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: _isLoading 
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                            : const Icon(Icons.sync, color: Colors.white, size: 20),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // TIER / RANK
+                  Text('Rank & Tier', style: GoogleFonts.nunito(color: _textMuted, fontSize: 13, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _bgDark,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _rankName,
+                        dropdownColor: _cardBg,
+                        isExpanded: true,
+                        icon: const Icon(Icons.keyboard_arrow_down, color: _textMuted),
+                        style: GoogleFonts.nunito(color: _textWhite, fontWeight: FontWeight.bold, fontSize: 16),
+                        items: _rankOptions.map((r) => DropdownMenuItem(value: r, child: Row(
+                          children: [
+                            const Icon(Icons.military_tech, color: _flatAmber, size: 20),
+                            const SizedBox(width: 12),
+                            Text('Rank $r'),
+                          ],
+                        ))).toList(),
+                        onChanged: _onRankChanged,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  _buildInputRow('Gold', _goldCtrl, showButtons: false, icon: Icons.monetization_on, iconColor: _flatAmber),
+                  _buildInputRow('Level', _levelCtrl, step: 1, icon: Icons.trending_up, iconColor: _accentCyan),
+                  _buildInputRow('Total XP', _xpCtrl, step: 1000, icon: Icons.star, iconColor: _flatAmber),
+                  
+                  const SizedBox(height: 12),
+                  Text('Health Pool', style: GoogleFonts.nunito(color: _textMuted, fontSize: 13, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      InkWell(
+                        onTap: () => setState(() => _hp = max(0, _hp - 20)),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _bgDark,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text('-20', style: GoogleFonts.nunito(color: _flatRed, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Container(
+                              height: 8,
+                              margin: const EdgeInsets.symmetric(horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: _bgDark,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: FractionallySizedBox(
+                                alignment: Alignment.centerLeft,
+                                widthFactor: _hp / 100.0,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: _accentCyan,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text('$_hp / 100 HP', style: GoogleFonts.nunito(color: _textMuted, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () => setState(() => _hp = min(100, _hp + 20)),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _bgDark,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text('+20', style: GoogleFonts.nunito(color: _flatGreen, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ]),
+                
+                // QUICK CHEATS
+                _buildCard('QUICK CHEATS', [
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 2.2,
+                    children: [
+                      _buildQuickBtn('DEMO ONBOARDING', Icons.play_circle_outline, _accentCyan, () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const OnboardingScreen()))),
+                      _buildQuickBtn('DEMO TUTORIAL', Icons.help_outline, _flatAmber, () {}),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  GridView.count(
+                    crossAxisCount: 3,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 1.2,
+                    children: [
+                      _buildQuickBtn('TEST NOTIF', Icons.notifications_none, _flatGreen, _testNotificationDialog),
+                      _buildQuickBtn('DEMO BADGE', Icons.emoji_events_outlined, _flatAmber, () {}),
+                      _buildQuickBtn('MAX STATS', Icons.diamond_outlined, _accentPurple, () async {
+                        setState(() {
+                          _levelCtrl.text = '150';
+                          _goldCtrl.text = '999999';
+                          _xpCtrl.text = '999999';
+                          _hp = 100;
+                          _strCtrl.text = '99999';
+                          _intCtrl.text = '99999';
+                          _agiCtrl.text = '99999';
+                          _vitCtrl.text = '99999';
+                          _defCtrl.text = '99999';
+                          _syncRankFromLevel(150);
+                        });
+                        await _updateStats();
+                        await _updateKualifikasi();
+                        if (mounted) Navigator.pop(context);
+                      }),
+                    ],
+                  ),
+                ]),
+                
+                // QUICK QUEST
+                _buildCard('QUICK QUEST', [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(color: _bgDark, borderRadius: BorderRadius.circular(8)),
+                    child: TextField(
+                      controller: _questNameCtrl,
+                      style: GoogleFonts.nunito(color: _textWhite, fontSize: 16, fontWeight: FontWeight.bold),
+                      decoration: InputDecoration(
+                        icon: const Icon(Icons.edit, color: _textMuted, size: 20),
+                        hintText: 'Nama Quest',
+                        hintStyle: GoogleFonts.nunito(color: _textMuted, fontSize: 14),
+                        border: InputBorder.none,
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text('Difficulty', style: GoogleFonts.nunito(color: _textMuted, fontSize: 13, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildChip('Easy', 'easy', _questDifficulty, (v) => setState(() => _questDifficulty = v)),
+                      _buildChip('Med', 'medium', _questDifficulty, (v) => setState(() => _questDifficulty = v)),
+                      _buildChip('Hard', 'hard', _questDifficulty, (v) => setState(() => _questDifficulty = v)),
+                      _buildChip('Epic', 'epic', _questDifficulty, (v) => setState(() => _questDifficulty = v)),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text('Kategori', style: GoogleFonts.nunito(color: _textMuted, fontSize: 13, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildChip('Strength', 'Strength', _questCategory, (v) => setState(() => _questCategory = v)),
+                      _buildChip('Defense', 'Defense', _questCategory, (v) => setState(() => _questCategory = v)),
+                      _buildChip('Intelligence', 'Intelligence', _questCategory, (v) => setState(() => _questCategory = v)),
+                      _buildChip('Vitality', 'Vitality', _questCategory, (v) => setState(() => _questCategory = v)),
+                      _buildChip('Agility', 'Agility', _questCategory, (v) => setState(() => _questCategory = v)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: _isLoading ? null : _createQuickQuest,
+                    icon: const Icon(Icons.auto_awesome, color: Colors.white),
+                    label: Text('CREATE QUEST', style: GoogleFonts.nunito(color: Colors.white, fontWeight: FontWeight.w800, letterSpacing: 1.5)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _accentPurple,
+                      elevation: 0,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+                ]),
+                
+                // KUALIFIKASI & GELAR
+                _buildCard('KUALIFIKASI & GELAR', [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: _bgDark,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: _accentPurple, width: 1.5),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.military_tech, color: _accentPurple, size: 36),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Rank $_rankName', style: GoogleFonts.nunito(color: _textWhite, fontWeight: FontWeight.w800, fontSize: 18, letterSpacing: 1)),
+                              const SizedBox(height: 4),
+                              Text(_currentGelar, style: GoogleFonts.nunito(color: _textMuted, fontSize: 14, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text('Atribut XP (Penentu Gelar)', style: GoogleFonts.nunito(color: _textMuted, fontSize: 13, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  _buildInputRow('STR', _strCtrl, step: 100),
+                  _buildInputRow('DEF', _defCtrl, step: 100),
+                  _buildInputRow('INT', _intCtrl, step: 100),
+                  _buildInputRow('VIT', _vitCtrl, step: 100),
+                  _buildInputRow('AGI', _agiCtrl, step: 100),
+                  
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : () async {
+                      await _updateStats();
+                      await _updateKualifikasi();
+                      if (mounted) Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _accentCyan,
+                      elevation: 0,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text('APPLY CHANGES', style: GoogleFonts.nunito(color: _bgDark, fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 16)),
+                  ),
+                ]),
+                
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
-
-

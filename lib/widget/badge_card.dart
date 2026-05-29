@@ -10,12 +10,18 @@ class BadgeCard extends StatelessWidget {
   final AppBadge badge;
   final bool isUnlocked;
   final double progress;
+  final bool isClaimed;
+  final bool isEquipped;
+  final VoidCallback? onTapButton;
 
   const BadgeCard({
     super.key,
     required this.badge,
     required this.isUnlocked,
     required this.progress,
+    this.isClaimed = false,
+    this.isEquipped = false,
+    this.onTapButton,
   });
 
   @override
@@ -52,13 +58,19 @@ class BadgeCard extends StatelessWidget {
                   : AppColors.textPrimary.withValues(alpha: 0.05),
               shape: BoxShape.circle,
             ),
-            child: Text(
-              badge.icon,
-              style: TextStyle(
-                fontSize: 32,
-                color: isUnlocked ? null : Colors.grey.withValues(alpha: 0.5),
-              ),
-            ),
+            child: badge.flutterIcon != null
+                ? Icon(
+                    badge.flutterIcon,
+                    size: 32,
+                    color: isUnlocked ? badgeColor : Colors.grey.withValues(alpha: 0.5),
+                  )
+                : Text(
+                    badge.icon,
+                    style: TextStyle(
+                      fontSize: 32,
+                      color: isUnlocked ? null : Colors.grey.withValues(alpha: 0.5),
+                    ),
+                  ),
           ),
           SizedBox(height: 12),
           Text(
@@ -96,6 +108,25 @@ class BadgeCard extends StatelessWidget {
                     badgeColor.withValues(alpha: 0.5),
                   ),
                   minHeight: 4,
+                ),
+              ),
+            ),
+          ],
+          if (isUnlocked) ...[
+            SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: onTapButton,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isEquipped ? Colors.grey.withValues(alpha: 0.2) : badgeColor,
+                minimumSize: const Size(80, 24),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+              child: Text(
+                isEquipped ? 'Dilepas' : (isClaimed ? 'Pakai' : 'Klaim'),
+                style: GoogleFonts.nunito(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: isEquipped ? AppColors.textPrimary : AppColors.textOnPrimary,
                 ),
               ),
             ),

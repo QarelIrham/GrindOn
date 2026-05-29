@@ -148,7 +148,7 @@ class _DailyScreenState extends State<DailyScreen> {
     }
   }
 
-  String _getRank(int level) => RankSystem.rankFromLevel(level);
+  String _getRank(int level) => RankSystem.calculateRank(level);
 
   Color _rankColor(String rank) => Color(RankSystem.rankColorHex(rank));
 
@@ -286,14 +286,27 @@ class _DailyScreenState extends State<DailyScreen> {
                       border: InputBorder.none,
                     ),
                   )
-                : Text(
-                    'Daily Task',
-                    style: GoogleFonts.nunito(
-                      color: AppColors.textPrimary,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                : Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Image.asset(
+                          'lib/assets/logo/Logo_GrindOn.png',
+                          height: 28,
+                          width: 28,
+                          errorBuilder: (context, error, stackTrace) => Icon(Icons.shield, color: AppColors.primary, size: 24),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'DAILY TASK',
+                          style: GoogleFonts.cinzel(
+                            color: AppColors.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2.0,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
           ),
           _iconBtn(
             icon: _showSearch ? Icons.close_rounded : Icons.search_rounded,
@@ -597,7 +610,7 @@ class _DailyScreenState extends State<DailyScreen> {
           final color = i == 0 ? AppColors.primary : _catColors[cat]!;
           return GestureDetector(
             onTap: () {
-              AudioService.playClick();
+              // AudioService.playClick();
               setState(() => _filterCat = cat);
             },
             child: AnimatedContainer(
@@ -847,7 +860,7 @@ class DailyTaskCardState extends State<DailyTaskCard>
   ) {
     final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
     HapticFeedback.mediumImpact();
-    AudioService.playClick();
+    // AudioService.playClick();
     Navigator.push(
       context,
       MaterialPageRoute(

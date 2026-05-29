@@ -6,19 +6,67 @@ import 'package:flutter/foundation.dart';
 class AudioService {
   static final AudioPlayer _uiPlayer = AudioPlayer();
   static final AudioPlayer _mainPlayer = AudioPlayer();
-  static const String _path = 'lib/assets/audio/';
+  static final AudioPlayer _bgmPlayer = AudioPlayer();
+  static const String _path = 'audio/';
   static bool isEnabled = true;
+  static bool isMusicEnabled = true;
   static bool _isInitialized = false;
   static DateTime _lastClickTime = DateTime.now();
 
-  static void init({bool? enabled}) {
+  static void init({bool? enabled, bool? musicEnabled}) {
     if (enabled != null) isEnabled = enabled;
+    if (musicEnabled != null) {
+      isMusicEnabled = musicEnabled;
+      if (isMusicEnabled) {
+        playBgm();
+      } else {
+        stopBgm();
+      }
+    }
     if (_isInitialized) return;
+
+    final ctx = AudioContextConfig(
+      respectSilence: false,
+      focus: AudioContextConfigFocus.mixWithOthers,
+    ).build();
     
-    _uiPlayer.audioCache.prefix = '';
-    _mainPlayer.audioCache.prefix = '';
+    AudioPlayer.global.setAudioContext(ctx);
+    _bgmPlayer.setAudioContext(ctx);
+    _uiPlayer.setAudioContext(ctx);
+    _mainPlayer.setAudioContext(ctx);
+    
+    _bgmPlayer.setReleaseMode(ReleaseMode.loop);
     
     _isInitialized = true;
+  }
+
+  static Future<void> playBgm() async {
+    if (!isMusicEnabled) return;
+    try {
+      init();
+      if (_bgmPlayer.state != PlayerState.playing) {
+        await _bgmPlayer.play(AssetSource('${_path}rpgtheme.mp3'), volume: 0.4);
+      }
+    } catch (e) {
+      debugPrint('BGM Error: $e');
+    }
+  }
+
+  static Future<void> stopBgm() async {
+    try {
+      await _bgmPlayer.stop();
+    } catch (e) {
+      debugPrint('BGM Stop Error: $e');
+    }
+  }
+
+  static Future<void> toggleBgm(bool enable) async {
+    isMusicEnabled = enable;
+    if (enable) {
+      await playBgm();
+    } else {
+      await stopBgm();
+    }
   }
 
   static Future<void> playSuccess() async {
@@ -66,18 +114,7 @@ class AudioService {
   }
 
   static Future<void> playClick() async {
-    if (!isEnabled) return;
-    
-    final now = DateTime.now();
-    if (now.difference(_lastClickTime).inMilliseconds < 50) return;
-    _lastClickTime = now;
-
-    try {
-      init();
-      await _uiPlayer.stop();
-      await _uiPlayer.play(AssetSource('${_path}menuclick.m4a'), volume: 0.3);
-    } catch (e) {
-      debugPrint('Click SFX Error: $e');
-    }
+    // Disabled as per user request to prevent lag
+    return;
   }
 }

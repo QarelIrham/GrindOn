@@ -35,6 +35,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   int _hp = 100;
   int _maxHp = 100;
   bool _soundEnabled = true;
+  bool _musicEnabled = true;
 
   Map<String, String> _equippedItems = {
     'head': 'none',
@@ -46,6 +47,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, int> _inventory = {};
   List<String> _unlockedItems = ['none', 'default'];
   Map<String, int> _categoryXp = {};
+  List<String> _claimedBadges = [];
+  List<String> _equippedBadges = [];
   String? _baseBody;
 
   @override
@@ -73,7 +76,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _hp = d[UserSchema.hp] ?? 100;
       _maxHp = d[UserSchema.maxHp] ?? 100;
       _soundEnabled = d[UserSchema.soundEnabled] ?? true;
+      _musicEnabled = d[UserSchema.musicEnabled] ?? true;
       AudioService.isEnabled = _soundEnabled;
+      AudioService.isMusicEnabled = _musicEnabled;
+      if (_musicEnabled) {
+        AudioService.playBgm();
+      }
 
       if (d[UserSchema.equippedItems] != null) {
         _equippedItems = Map<String, String>.from(d[UserSchema.equippedItems]);
@@ -93,11 +101,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'Defense': d[UserSchema.defenseXp] ?? 0,
         'Vitality': d[UserSchema.vitalityXp] ?? 0,
       };
+      if (d[UserSchema.claimedBadges] != null) {
+        _claimedBadges = List<String>.from(d[UserSchema.claimedBadges]);
+      }
+      if (d[UserSchema.equippedBadges] != null) {
+        _equippedBadges = List<String>.from(d[UserSchema.equippedBadges]);
+      }
       _baseBody = d[UserSchema.baseBody] as String?;
     });
   }
 
   // --- Logic Methods (Logika Bisnis) ---
+
+  // FUNGSI CLAIM & EQUIP BADGE
+  Future<void> _claimBadge(AppBadge badge) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    setState(() => _claimedBadges.add(badge.id));
+    await FirebaseFirestore.instance.collection('users').doc(uid).update({
+      UserSchema.claimedBadges: FieldValue.arrayUnion([badge.id])
+    });
+    // AudioService.playSuccess(); // User requested no sound
+  }
+
+  Future<void> _equipBadge(AppBadge badge) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    setState(() {
+      if (_equippedBadges.contains(badge.id)) {
+        _equippedBadges.remove(badge.id);
+      } else {
+        if (_equippedBadges.length >= 3) {
+          _equippedBadges.removeAt(0); // Max 3 badges
+        }
+        _equippedBadges.add(badge.id);
+      }
+    });
+    await FirebaseFirestore.instance.collection('users').doc(uid).update({
+      UserSchema.equippedBadges: _equippedBadges,
+    });
+    // AudioService.playClick(); // User requested no sound
+  }
 
   // FUNGSI MEMAKAI / MEMBELI BAJU AVATAR
   Future<void> _handleEquip(String category, String itemId) async {
@@ -287,6 +331,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         currentUsername: _username,
         currentEmail: _email,
         soundEnabled: _soundEnabled,
+        musicEnabled: _musicEnabled,
         onProfileUpdated: _loadUserData,
       ),
     );
@@ -321,7 +366,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(l.profileCharacter, style: GoogleFonts.nunito(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              Image.asset(
+                'lib/assets/logo/Logo_GrindOn.png',
+                height: 28,
+                width: 28,
+                errorBuilder: (context, error, stackTrace) => Icon(Icons.shield, color: AppColors.primary, size: 24),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                l.profileCharacter.toUpperCase(),
+                style: GoogleFonts.cinzel(
+                  color: AppColors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2.0,
+                ),
+              ),
+            ],
+          ),
           Row(
             children: [
               _buildCoinDisplay(),
@@ -345,7 +409,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Row(
         children: [
-          Icon(Icons.monetization_on, color: AppColors.gold, size: 16),
+          Icon(Icons.monetization_on_rounded, color: AppColors.gold, size: 16),
           SizedBox(width: 6),
           Text('$_coin', style: GoogleFonts.nunito(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 15)),
         ],
@@ -416,7 +480,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildMainContent() {
     switch (_selectedTabIndex) {
       case 0:
-        return BadgeGalleryView(level: _level, totalTasksDone: _totalTasksDone, coin: _coin, streak: _streak, categoryXp: _categoryXp, accentColor: AppColors.primary);
+        return BadgeGalleryView(
+          level: _level, 
+          totalTasksDone: _totalTasksDone, 
+          coin: _coin, 
+          streak: _streak, 
+          categoryXp: _categoryXp, 
+          claimedBadges: _claimedBadges, 
+          equippedBadges: _equippedBadges,
+          onClaimBadge: _claimBadge,
+          onEquipBadge: _equipBadge,
+          accentColor: AppColors.primary
+        );
       case 1:
         return AvatarShopView(equippedItems: _equippedItems, unlockedItems: _unlockedItems, onEquip: _handleEquip, accentColor: AppColors.primary, cardDark: AppColors.cardBackground, cardBorder: AppColors.cardBorder, baseBody: _baseBody);
       case 2:

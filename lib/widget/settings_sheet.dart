@@ -21,6 +21,7 @@ class SettingsSheet extends StatefulWidget {
   final String currentUsername;
   final String currentEmail;
   final bool soundEnabled;
+  final bool musicEnabled;
   final VoidCallback onProfileUpdated;
 
   const SettingsSheet({
@@ -29,6 +30,7 @@ class SettingsSheet extends StatefulWidget {
     required this.currentUsername,
     required this.currentEmail,
     required this.soundEnabled,
+    required this.musicEnabled,
     required this.onProfileUpdated,
   });
 
@@ -41,6 +43,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
   bool _isLoading = false;
   late bool _isEmailVerified;
   late bool _soundEnabled;
+  late bool _musicEnabled;
   int _versionTapCount = 0; // Menghitung jumlah klik untuk easter egg
 
   @override
@@ -48,6 +51,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
     super.initState();
     _isEmailVerified = FirebaseAuth.instance.currentUser?.emailVerified ?? false;
     _soundEnabled = widget.soundEnabled;
+    _musicEnabled = widget.musicEnabled;
   }
 
   Future<void> _toggleSound(bool val) async {
@@ -57,6 +61,18 @@ class _SettingsSheetState extends State<SettingsSheet> {
     if (uid != null) {
       await FirebaseFirestore.instance.collection('users').doc(uid).update({
         UserSchema.soundEnabled: val,
+      });
+    }
+    widget.onProfileUpdated();
+  }
+
+  Future<void> _toggleMusic(bool val) async {
+    setState(() => _musicEnabled = val);
+    await AudioService.toggleBgm(val);
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        UserSchema.musicEnabled: val,
       });
     }
     widget.onProfileUpdated();
@@ -361,6 +377,45 @@ class _SettingsSheetState extends State<SettingsSheet> {
                     Switch(
                       value: _soundEnabled,
                       onChanged: _toggleSound,
+                      activeColor: AppColors.primary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.textPrimary.withValues(alpha: 0.03),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.textPrimary.withValues(alpha: 0.05)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                      child: Icon(_musicEnabled ? Icons.music_note_rounded : Icons.music_off_rounded, color: AppColors.primary, size: 20),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(isEn ? 'Background Music' : 'Musik Latar', style: GoogleFonts.nunito(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
+                          Text(
+                            _musicEnabled ? (isEn ? 'Music On' : 'Musik Aktif') : (isEn ? 'Music Off' : 'Musik Dimatikan'),
+                            style: GoogleFonts.nunito(color: AppColors.textPrimary.withValues(alpha: 0.54), fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: _musicEnabled,
+                      onChanged: _toggleMusic,
                       activeColor: AppColors.primary,
                     ),
                   ],

@@ -12,11 +12,14 @@ import 'add_task_screen.dart';
 import 'daily_screen.dart';
 import 'statistic_screen.dart';
 import '../models/app_schema.dart';
+import '../widget/screen_header.dart';
 import '../services/notification_service.dart';
 import 'profile_screen.dart';
 import '../widget/avatar_preview.dart';
 import '../widget/dev_tools_sheet.dart';
 import '../widget/rpg_tutorial_overlay.dart';
+import '../widget/rpg_loading.dart';
+import '../widget/active_buffs_widget.dart';
 import '../theme/rpg_theme.dart';
 import '../theme/app_theme.dart';
 import '../services/audio_service.dart';
@@ -76,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   final Map<String, bool> _expandedCats = {};
   Map<String, String> _equippedItems = {};
+  Timestamp? _xpBonusUntil;
   String? _baseBody;
   Offset _godModeOffset = const Offset(
     16,
@@ -106,10 +110,11 @@ class _HomeScreenState extends State<HomeScreen> {
       _maxHp = d[UserSchema.maxHp] ?? 100;
       _coin = d[UserSchema.gold] ?? d['coin'] ?? 0;
       _role = d[UserSchema.role] ?? 'user';
-      _rank = _getRank(_level);
+      _rank = _getRank(d);
       if (d[UserSchema.equippedItems] != null) {
         _equippedItems = Map<String, String>.from(d[UserSchema.equippedItems]);
       }
+      _xpBonusUntil = d[UserSchema.xpBonusUntil] as Timestamp?;
       _baseBody = d[UserSchema.baseBody] as String?;
       _checkPendingTasksAndNotify(uid);
     });
@@ -170,7 +175,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  String _getRank(int lv) => RankSystem.rankFromLevel(lv);
+  String _getRank(Map<String, dynamic> d) => RankSystem.calculateRank(
+    d['level'] ?? 1,
+    str: d[UserSchema.strengthXp] ?? 0,
+    def: d[UserSchema.defenseXp] ?? 0,
+    intl: d[UserSchema.intelligenceXp] ?? 0,
+    vit: d[UserSchema.vitalityXp] ?? 0,
+    agi: d[UserSchema.agilityXp] ?? 0,
+  );
 
   Color _getRankColor(String r) => Color(RankSystem.rankColorHex(r));
 
@@ -195,7 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const RpgLoading();
     }
 
     return StreamBuilder<DocumentSnapshot>(
@@ -215,12 +227,13 @@ class _HomeScreenState extends State<HomeScreen> {
           _maxHp = d[UserSchema.maxHp] ?? 100;
           _coin = d[UserSchema.gold] ?? d['coin'] ?? 0;
           _role = d[UserSchema.role] ?? 'user';
-          _rank = _getRank(_level);
+          _rank = _getRank(d);
           if (d[UserSchema.equippedItems] != null) {
             _equippedItems = Map<String, String>.from(
               d[UserSchema.equippedItems],
             );
           }
+          _xpBonusUntil = d[UserSchema.xpBonusUntil] as Timestamp?;
           _baseBody = d[UserSchema.baseBody] as String?;
 
           if (d['tutorialsCompleted'] != null) {
@@ -416,17 +429,8 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Tambahkan logo GrindOn di sini agar selalu terlihat di halaman utama
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0, top: 8.0),
-                  child: Image.asset(
-                    'lib/assets/logo/Logo_GrindOn.png',
-                    height: 50,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
+              // Top App Bar / Header Logo
+              const ScreenHeader(title: 'Home'),
               _buildHeader(), // Kartu Profil Pemain (Nama, HP, Level, XP)
               SizedBox(height: 12),
               _buildDailyProgress(doneCount, todayDocs.length), // Progress Bar Harian
@@ -563,7 +567,7 @@ class _HomeScreenState extends State<HomeScreen> {
           InkWell(
             onTap: () {
               HapticFeedback.lightImpact();
-              AudioService.playClick();
+              // AudioService.playClick();
               setState(() {
                 _expandedCats[cat] = !isExpanded;
               });
@@ -740,7 +744,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           return InkWell(
                             onTap: () {
                               HapticFeedback.mediumImpact();
-                              AudioService.playClick();
+                              // AudioService.playClick();
                               showModalBottomSheet(
                                 context: context,
                                 isScrollControlled: true,
@@ -907,6 +911,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
+                    SizedBox(height: 8),
+                    // Active Buffs Row
+                    ActiveBuffsWidget(equippedItems: _equippedItems, xpBonusUntil: _xpBonusUntil),
                   ],
                 ),
               ),
@@ -987,6 +994,32 @@ class _HomeScreenState extends State<HomeScreen> {
             xpN,
             xpProg,
             AppColors.xp,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBuffBadge(String emoji, String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 10)),
+          const SizedBox(width: 2),
+          Text(
+            text,
+            style: GoogleFonts.nunito(
+              color: color,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),

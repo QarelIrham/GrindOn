@@ -83,7 +83,7 @@ class ItemShopView extends StatelessWidget {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Color(0xFFF59E0B).withValues(alpha: 0.1), foregroundColor: Color(0xFFF59E0B), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), minimumSize: Size(60, 30), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
                 onPressed: () => onBuy(id, price),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.monetization_on, size: 14), SizedBox(width: 4), Text('$price', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))]),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.monetization_on_rounded, size: 14), SizedBox(width: 4), Text('$price', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))]),
               ),
               SizedBox(height: 6),
               if (count > 0)

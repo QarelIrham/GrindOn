@@ -8,6 +8,7 @@ import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/app_schema.dart';
+import '../widget/screen_header.dart';
 import '../widget/avatar_preview.dart';
 import '../widget/rpg_tutorial_overlay.dart';
 import '../services/locale_service.dart';
@@ -31,7 +32,7 @@ class _StatisticScreenState extends State<StatisticScreen>
   static Map<String, Color> get catColors => RPGColors.catColors;
   static Map<String, IconData> get catIcons => RPGIcons.catIcons;
 
-  static const List<String> rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
+  static const List<String> rankOrder = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS', 'SSR'];
 
   String _name = 'User';
   int _level = 1;
@@ -50,6 +51,7 @@ class _StatisticScreenState extends State<StatisticScreen>
   int _intelligenceXp = 0;
   int _vitalityXp = 0;
   int _agilityXp = 0;
+  List<String> _equippedBadges = [];
   bool _isLoading = true;
 
   // Leaderboard tutorial
@@ -99,7 +101,7 @@ class _StatisticScreenState extends State<StatisticScreen>
       _name = d[UserSchema.name] ?? 'User';
       _level = d[UserSchema.level] ?? 1;
       _xp = d[UserSchema.xp] ?? 0;
-      _rank = RankSystem.rankFromLevel(_level);
+      _rank = RankSystem.calculateRank(_level, str: _strengthXp, def: _defenseXp, intl: _intelligenceXp, vit: _vitalityXp, agi: _agilityXp);
       _streak = d[UserSchema.streak] ?? 0;
       _longestStreak = d[UserSchema.longestStreak] ?? 0;
       _totalDone = d[UserSchema.totalTasksDone] ?? 0;
@@ -112,6 +114,7 @@ class _StatisticScreenState extends State<StatisticScreen>
       _intelligenceXp = d[UserSchema.intelligenceXp] ?? 0;
       _vitalityXp = d[UserSchema.vitalityXp] ?? 0;
       _agilityXp = d[UserSchema.agilityXp] ?? 0;
+      _equippedBadges = List<String>.from(d[UserSchema.equippedBadges] ?? []);
       _isLoading = false;
     });
     _barCtrl.forward();
@@ -142,15 +145,8 @@ class _StatisticScreenState extends State<StatisticScreen>
   // ── Gelar Pemain Dinamis (Dynamic Title) ───────────────────────────
   // Memberikan gelar spesial (Title) berdasarkan tipe misi apa yang paling sering dikerjakan.
   String _getDynamicTitle() {
-    final maxList = [_strengthXp, _defenseXp, _intelligenceXp, _vitalityXp, _agilityXp];
-    final maxVal = maxList.reduce((a, b) => a > b ? a : b);
-    if (maxVal == 0) return 'The Beginner';
-    if (_strengthXp == maxVal) return 'The Iron Warrior';
-    if (_defenseXp == maxVal) return 'The Iron Tank';
-    if (_intelligenceXp == maxVal) return 'The Wise Strategist';
-    if (_vitalityXp == maxVal) return 'The Undying';
-    if (_agilityXp == maxVal) return 'The Swift Shadow';
-    return 'The Adventurer';
+    final rankStr = RankSystem.calculateRank(_level, str: _strengthXp, def: _defenseXp, intl: _intelligenceXp, vit: _vitalityXp, agi: _agilityXp);
+    return RankSystem.getDynamicTitle(_strengthXp, _defenseXp, _intelligenceXp, _vitalityXp, _agilityXp, rankStr, _level, 0);
   }
 
   // Menjumlahkan semua XP dari 5 atribut kategori (Strength, Agility, dst)
@@ -176,7 +172,7 @@ class _StatisticScreenState extends State<StatisticScreen>
           _name = d[UserSchema.name] ?? 'User';
           _level = d[UserSchema.level] ?? 1;
           _xp = d[UserSchema.xp] ?? 0;
-          _rank = RankSystem.rankFromLevel(_level);
+          _rank = RankSystem.calculateRank(_level, str: _strengthXp, def: _defenseXp, intl: _intelligenceXp, vit: _vitalityXp, agi: _agilityXp);
           _streak = d[UserSchema.streak] ?? 0;
           _longestStreak = d[UserSchema.longestStreak] ?? 0;
           _totalDone = d[UserSchema.totalTasksDone] ?? 0;
@@ -202,6 +198,10 @@ class _StatisticScreenState extends State<StatisticScreen>
           length: 2,
           child: Column(
             children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: ScreenHeader(title: 'Statistics'),
+              ),
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 decoration: BoxDecoration(
@@ -330,7 +330,7 @@ class _StatisticScreenState extends State<StatisticScreen>
             final level = data[UserSchema.level] ?? 1;
             
             // Konversi dari angka level menjadi Huruf Rank (S, A, B, dll)
-            final rank = RankSystem.rankFromLevel(level);
+            final rank = RankSystem.calculateRank(level, str: data[UserSchema.strengthXp] ?? 0, def: data[UserSchema.defenseXp] ?? 0, intl: data[UserSchema.intelligenceXp] ?? 0, vit: data[UserSchema.vitalityXp] ?? 0, agi: data[UserSchema.agilityXp] ?? 0);
             
             final uid = data[UserSchema.id] ?? '';
             // Deteksi apakah baris ini adalah diri kita sendiri
@@ -338,13 +338,14 @@ class _StatisticScreenState extends State<StatisticScreen>
             
             // Ambil data baju/avatar orang lain untuk ditampilkan jika kita tap namanya
             final equipped = Map<String, String>.from(data[UserSchema.equippedItems] ?? {});
+            final equippedBadgeIds = List<String>.from(data[UserSchema.equippedBadges] ?? []);
 
             return InkWell(
               // Munculkan dialog profil (layar popup) saat ditekan
               onTap: () => _showUserProfile(data),
               borderRadius: BorderRadius.circular(20),
               // Panggil UI Baris (Rank 1, 2, 3 warnanya akan dibuat spesial (Emas, Perak, Perunggu) di _buildLeaderboardRow)
-              child: _buildLeaderboardRow(index + 1, name, username, level, rank, equipped, isMe),
+              child: _buildLeaderboardRow(index + 1, name, username, level, rank, equipped, isMe, equippedBadgeIds),
             );
           },
         );
@@ -352,7 +353,16 @@ class _StatisticScreenState extends State<StatisticScreen>
     );
   }
 
-  Widget _buildLeaderboardRow(int pos, String name, String username, int level, String rank, Map<String, String> equipped, bool isMe) {
+  Widget _buildLeaderboardRow(
+    int pos,
+    String name,
+    String username,
+    int level,
+    String rank,
+    Map<String, String> equipped,
+    bool isMe,
+    List<String> equippedBadgeIds,
+  ) {
     final rankCol = _rankColor(rank);
     Color posColor = AppColors.textPrimary.withValues(alpha: 0.38);
     List<Color> rowGradient = [cardDark, cardDark];
@@ -474,6 +484,25 @@ class _StatisticScreenState extends State<StatisticScreen>
                   fontWeight: FontWeight.w800,
                 ),
               ),
+              if (equippedBadgeIds.isNotEmpty) ...[
+                SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: equippedBadgeIds.map((id) {
+                    try {
+                      final b = BadgeSystem.allBadges.firstWhere((badge) => badge.id == id);
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 4.0),
+                        child: b.flutterIcon != null
+                            ? Icon(b.flutterIcon, size: 14, color: Color(b.colorHex))
+                            : Text(b.icon, style: const TextStyle(fontSize: 12)),
+                      );
+                    } catch (_) {
+                      return const SizedBox.shrink();
+                    }
+                  }).toList(),
+                ),
+              ],
             ],
           ),
         ],
@@ -557,8 +586,9 @@ class _StatisticScreenState extends State<StatisticScreen>
       'B': [AppColors.success, Color(0xFF064E3B)],
       'A': [AppColors.error, Color(0xFF7F1D1D)],
       'S': [Color(0xFFEC4899), Color(0xFF831843)],
-      'SS': [Color(0xFF06B6D4), Color(0xFF083344)],
+      'SS': [Color(0xFF06B6D4), Color(0xFF3B82F6), Color(0xFF6366F1)],
       'SSS': [AppColors.warning, Color(0xFFB45309), AppColors.gold],
+      'SSR': [const Color(0xFFFFFFFF), const Color(0xFFE0F7FA), const Color(0xFFFFFFFF)],
     };
 
     final gradient = rankGradients[_rank] ?? [Colors.grey, AppColors.textPrimary];
@@ -603,14 +633,15 @@ class _StatisticScreenState extends State<StatisticScreen>
               child: Text(
                 _rank,
                 style: GoogleFonts.nunito(
-                  color: AppColors.textPrimary,
-                  fontSize: _rank == 'SSS' ? 36 : 54,
+                  color: Colors.white,
+                  fontSize: (_rank == 'SSS' || _rank == 'SSR') ? 36 : 54,
                   fontWeight: FontWeight.w900,
+                  fontStyle: FontStyle.italic,
                   shadows: [
                     Shadow(
-                      color: AppColors.textPrimary.withValues(alpha: 0.26),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
+                      color: (_rank == 'SSS' || _rank == 'SSR') ? Colors.black54 : Colors.transparent,
+                      blurRadius: 4,
+                      offset: const Offset(2, 2),
                     ),
                   ],
                 ),
@@ -634,7 +665,9 @@ class _StatisticScreenState extends State<StatisticScreen>
               fontWeight: FontWeight.w600,
             ),
           ),
-          SizedBox(height: 30),
+          const SizedBox(height: 16),
+          _buildEquippedBadgesRow(_equippedBadges),
+          const SizedBox(height: 16),
           
           // Stats Row
           Row(
@@ -654,7 +687,7 @@ class _StatisticScreenState extends State<StatisticScreen>
     return Column(
       children: [
         if (isCoin)
-          Icon(Icons.monetization_on_rounded, color: AppColors.warning, size: 18)
+          Icon(Icons.monetization_on_rounded, color: AppColors.gold, size: 18)
         else
           Text(label, style: GoogleFonts.nunito(color: color, fontSize: 11, fontWeight: FontWeight.w800)),
         SizedBox(height: 4),
@@ -778,13 +811,14 @@ class _StatisticScreenState extends State<StatisticScreen>
 
   // ── 4. Radar Chart ────────────────────────────────────────
   Widget _buildRadarSection() {
-    final total = _totalAttrXp == 0 ? 1 : _totalAttrXp;
+    // 9999 adalah limit absolut agar Spider Chart sinkron (proposional) di semua tier
+    const double maxLimit = 9999.0;
     final values = [
-      _strengthXp / total,
-      _intelligenceXp / total,
-      _agilityXp / total,
-      _vitalityXp / total,
-      _defenseXp / total,
+      _strengthXp / maxLimit,
+      _intelligenceXp / maxLimit,
+      _agilityXp / maxLimit,
+      _vitalityXp / maxLimit,
+      _defenseXp / maxLimit,
     ].map((v) => v.clamp(0.0, 1.0)).toList();
 
     return Container(
@@ -972,21 +1006,40 @@ class _StatisticScreenState extends State<StatisticScreen>
     final name = d[UserSchema.name] ?? 'Hero';
     final username = d[UserSchema.username] ?? 'user';
     final level = d[UserSchema.level] ?? 1;
-    final rank = RankSystem.rankFromLevel(level);
+    final rank = RankSystem.calculateRank(level, str: d[UserSchema.strengthXp] ?? 0, def: d[UserSchema.defenseXp] ?? 0, intl: d[UserSchema.intelligenceXp] ?? 0, vit: d[UserSchema.vitalityXp] ?? 0, agi: d[UserSchema.agilityXp] ?? 0);
     final equipped = Map<String, String>.from(d[UserSchema.equippedItems] ?? {});
+    final equippedBadgeIds = List<String>.from(d[UserSchema.equippedBadges] ?? []);
     final rankColor = _rankColor(rank);
+
+    final str = d[UserSchema.strengthXp] ?? 0;
+    final intl = d[UserSchema.intelligenceXp] ?? 0;
+    final vit = d[UserSchema.vitalityXp] ?? 0;
+    final agi = d[UserSchema.agilityXp] ?? 0;
+    final def = d[UserSchema.defenseXp] ?? 0;
+    final tasksDone = d[UserSchema.totalTasksDone] ?? 0;
+    final dynamicTitle = RankSystem.getDynamicTitle(str, def, intl, vit, agi, rank, level, tasksDone);
+
+    // Hitung Radar Chart
+    const double maxLimit = 9999.0;
+    final values = <double>[
+      str / maxLimit,
+      intl / maxLimit,
+      agi / maxLimit,
+      vit / maxLimit,
+      def / maxLimit,
+    ].map((v) => v.clamp(0.0, 1.0)).toList();
 
     showDialog(
       context: context,
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
-          width: 320,
+          width: 340,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: cardDark,
+            color: const Color(0xFF1B1B27), // Warna navy dark
             borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: rankColor.withValues(alpha: 0.3), width: 2),
+            border: Border.all(color: rankColor.withValues(alpha: 0.3), width: 1.5),
             boxShadow: [
               BoxShadow(color: rankColor.withValues(alpha: 0.1), blurRadius: 20, spreadRadius: 5),
             ],
@@ -994,77 +1047,93 @@ class _StatisticScreenState extends State<StatisticScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Avatar Preview (Large)
+              // Avatar
               Container(
                 width: 140,
                 height: 140,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.textPrimary.withValues(alpha: 0.05),
-                  border: Border.all(color: rankColor.withValues(alpha: 0.2)),
+                  border: Border.all(color: rankColor.withValues(alpha: 0.4), width: 1.5),
                 ),
                 child: ClipOval(
-                  child: AvatarPreview(
-                    equippedItems: equipped,
-                    size: 140,
-                    showBackground: true,
-                  ),
+                  child: AvatarPreview(equippedItems: equipped, size: 140, showBackground: true),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               // User Info
-              Text(
-                name,
-                style: GoogleFonts.nunito(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w900),
-              ),
-              Text(
-                '@$username',
-                style: GoogleFonts.nunito(color: AppColors.textPrimary.withValues(alpha: 0.54), fontSize: 12),
-              ),
-              SizedBox(height: 16),
-              // Level & Rank Tag
+              Text(name, style: GoogleFonts.nunito(color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w900)),
+              Text('@$username', style: GoogleFonts.nunito(color: AppColors.textPrimary.withValues(alpha: 0.54), fontSize: 13)),
+              const SizedBox(height: 12),
+              Icon(Icons.military_tech_rounded, color: AppColors.textSecondary, size: 24),
+              Text(dynamicTitle, style: GoogleFonts.nunito(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              
+              // Rank & Level Button Style
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: rankColor.withValues(alpha: 0.1),
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: rankColor.withValues(alpha: 0.4)),
+                      border: Border.all(color: rankColor),
                     ),
-                    child: Text(
-                      'Rank $rank',
-                      style: GoogleFonts.nunito(color: rankColor, fontWeight: FontWeight.bold, fontSize: 12),
-                    ),
+                    child: Text('Rank $rank', style: GoogleFonts.nunito(color: rankColor, fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Lv.$level',
-                    style: GoogleFonts.nunito(color: AppColors.textOnPrimary, fontWeight: FontWeight.w800, fontSize: 14),
-                  ),
+                  const SizedBox(width: 12),
+                  Text('Lv.$level', style: GoogleFonts.nunito(color: AppColors.textOnPrimary, fontWeight: FontWeight.w900, fontSize: 16)),
                 ],
               ),
-              SizedBox(height: 20),
-              Divider(color: AppColors.textDisabled, height: 1),
-              SizedBox(height: 16),
-              // Stats Preview
-              _buildMiniStatRow('Strength', d[UserSchema.strengthXp] ?? 0, catColors['Strength']!),
-              _buildMiniStatRow('Intelligence', d[UserSchema.intelligenceXp] ?? 0, catColors['Intelligence']!),
-              _buildMiniStatRow('Vitality', d[UserSchema.vitalityXp] ?? 0, catColors['Vitality']!),
-              SizedBox(height: 20),
-              // Close Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+              const SizedBox(height: 12),
+              _buildEquippedBadgesRow(equippedBadgeIds),
+              const SizedBox(height: 16),
+              Divider(color: AppColors.textPrimary.withValues(alpha: 0.1), height: 1),
+              const SizedBox(height: 16),
+              
+              // Bottom Row (Spider Chart + Stats List)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Spider Chart di Kiri
+                  Expanded(
+                    flex: 1,
+                    child: SizedBox(
+                      height: 120,
+                      child: CustomPaint(
+                        size: const Size(double.infinity, 120),
+                        painter: _RadarPainter(
+                          values: values,
+                          labels: const ['STR', 'INT', 'AGI', 'VIT', 'DEF'],
+                          colors: [
+                            catColors['Strength']!,
+                            catColors['Intelligence']!,
+                            catColors['Agility']!,
+                            catColors['Vitality']!,
+                            catColors['Defense']!,
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  child: Text('Tutup', style: GoogleFonts.nunito(color: AppColors.textOnPrimary, fontWeight: FontWeight.bold)),
-                ),
+                  const SizedBox(width: 16),
+                  // List Stat di Kanan
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildMiniStatRow('STR', str, catColors['Strength']!),
+                        _buildMiniStatRow('INT', intl, catColors['Intelligence']!),
+                        _buildMiniStatRow('AGI', agi, catColors['Agility']!),
+                        _buildMiniStatRow('VIT', vit, catColors['Vitality']!),
+                        _buildMiniStatRow('DEF', def, catColors['Defense']!),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1083,6 +1152,33 @@ class _StatisticScreenState extends State<StatisticScreen>
           Text('$xp XP', style: GoogleFonts.nunito(color: color, fontWeight: FontWeight.bold, fontSize: 11)),
         ],
       ),
+    );
+  }
+
+  Widget _buildEquippedBadgesRow(List<String> badgeIds) {
+    if (badgeIds.isEmpty) return const SizedBox.shrink();
+
+    final badges = badgeIds.map((id) {
+      try {
+        return BadgeSystem.allBadges.firstWhere((b) => b.id == id);
+      } catch (_) {
+        return null;
+      }
+    }).where((b) => b != null).cast<AppBadge>().toList();
+
+    if (badges.isEmpty) return const SizedBox.shrink();
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: badges.map((b) {
+        final color = Color(b.colorHex);
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 6),
+          child: b.flutterIcon != null
+              ? Icon(b.flutterIcon, size: 24, color: color)
+              : Text(b.icon, style: const TextStyle(fontSize: 20)),
+        );
+      }).toList(),
     );
   }
 }

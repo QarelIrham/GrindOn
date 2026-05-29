@@ -178,7 +178,7 @@ class _InteractiveTutorialScreenState extends State<InteractiveTutorialScreen>
                                     const SizedBox(width: 4),
                                     Text('+50 XP', style: GoogleFonts.nunito(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
                                     const SizedBox(width: 12),
-                                    Icon(Icons.monetization_on, color: AppColors.gold, size: 14),
+                                    Icon(Icons.monetization_on_rounded, color: AppColors.gold, size: 14),
                                     const SizedBox(width: 4),
                                     Text('+100 Gold', style: GoogleFonts.nunito(color: AppColors.gold, fontSize: 12, fontWeight: FontWeight.bold)),
                                   ],
@@ -240,7 +240,7 @@ class _InteractiveTutorialScreenState extends State<InteractiveTutorialScreen>
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.monetization_on, color: AppColors.gold, size: 24),
+                          Icon(Icons.monetization_on_rounded, color: AppColors.gold, size: 24),
                           const SizedBox(width: 8),
                           Text('+100 Gold', style: GoogleFonts.nunito(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                         ],

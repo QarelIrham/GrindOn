@@ -293,7 +293,7 @@ class _ProofScreenState extends State<ProofScreen> {
     }
 
     // Set peringkat baru (misal Level 10 jadi Peringkat B, dll)
-    final newRank = RankSystem.rankFromLevel(level);
+    final newRank = RankSystem.calculateRank(level);
     await FirebaseFirestore.instance.collection('users').doc(widget.uid).update(
       {UserSchema.level: level, UserSchema.rank: newRank},
     );

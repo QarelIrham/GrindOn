@@ -576,11 +576,11 @@ class L {
   //  NOTIFICATIONS
   // ════════════════════════════════════════════════════════
   String notifPendingTitle(int count) => isEn
-      ? '⚠️ HERO ALERT!'
-      : '⚠️ PERINGATAN HERO!';
+      ? 'SYSTEM ALERT: PENDING QUESTS'
+      : 'SYSTEM ALERT: QUEST TERTUNDA';
   String notifPendingBody(int count) => isEn
-      ? 'You have $count unfinished tasks! Your character\'s life is in danger!'
-      : 'Kamu punya $count tugas yang belum selesai! Nyawa karaktermu dalam bahaya jika malas!';
+      ? 'You have $count pending quests. Your character\'s vitality will decrease if you ignore your duty.'
+      : 'Kamu memiliki $count quest tertunda. Vitalitas karaktermu akan menurun jika kamu mengabaikan tugasmu.';
 
   // ════════════════════════════════════════════════════════
   //  TUTORIAL STEPS (xqvx The Creator)

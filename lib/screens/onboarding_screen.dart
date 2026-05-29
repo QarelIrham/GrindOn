@@ -95,18 +95,36 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       backgroundColor: Color(0xFF0F172A), // Warna dasar paling belakang
       body: Stack(
         children: [
-          // Lapis 1: Latar belakang warna yang bisa berubah-ubah perlahan (AnimatedContainer)
+          // Lapis 1: Latar belakang wallpaper RPG
           Positioned.fill(
-            child: AnimatedContainer(
-              duration: Duration(milliseconds: 700), // Kecepatan transisi warna
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  // Mengambil susunan warna sesuai halaman saat ini
-                  colors: _getBackgroundColors(),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 700),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              layoutBuilder: (currentChild, previousChildren) {
+                return Stack(
+                  fit: StackFit.expand,
+                  alignment: Alignment.center,
+                  children: <Widget>[
+                    ...previousChildren,
+                    if (currentChild != null) currentChild,
+                  ],
+                );
+              },
+              child: SizedBox.expand(
+                key: ValueKey<int>(_currentPage),
+                child: Image.asset(
+                  _getBackgroundImage(),
+                  fit: BoxFit.cover,
                 ),
               ),
+            ),
+          ),
+          // Overlay gelap agar teks terbaca
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withValues(alpha: 0.7),
             ),
           ),
           
@@ -134,14 +152,33 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.shield, color: AppColors.textSecondary, size: 20),
-                          SizedBox(width: 8),
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(0xFF0F0C1B),
+                              border: Border.all(color: const Color(0xFF7E57C2), width: 1.5),
+                              boxShadow: [
+                                BoxShadow(color: const Color(0xFF673AB7).withValues(alpha: 0.5), blurRadius: 8),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: Image.asset('lib/assets/logo/Logo_GrindOn.png', fit: BoxFit.contain),
+                            ),
+                          ),
+                          SizedBox(width: 12),
                           Text(
-                            'Daily Dev',
-                            style: GoogleFonts.outfit(
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1,
+                            'GrindOn',
+                            style: GoogleFonts.nunito(
+                              color: const Color(0xFFE1BEE7),
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.5,
+                              fontSize: 18,
+                              shadows: [
+                                const Shadow(color: Color(0xFF673AB7), blurRadius: 10),
+                              ],
                             ),
                           ),
                         ],
@@ -150,11 +187,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       TextButton(
                         onPressed: _finishOnboarding,
                         style: TextButton.styleFrom(
-                          foregroundColor: AppColors.textPrimary.withValues(alpha: 0.60),
+                          foregroundColor: Colors.white.withValues(alpha: 0.4),
                         ),
                         child: Text(
                           l.btnSkip,
-                          style: GoogleFonts.nunito(fontWeight: FontWeight.w600),
+                          style: GoogleFonts.nunito(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ],
@@ -201,17 +238,15 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                           width: double.infinity,
                           height: 56,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            gradient: LinearGradient(
-                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                            borderRadius: BorderRadius.circular(12),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFD500F9), Color(0xFF6A1B9A)],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
                             ),
-                            // Efek bayangan di bawah tombol
+                            border: Border.all(color: const Color(0xFF311B92), width: 3),
                             boxShadow: [
-                              BoxShadow(
-                                color: Color(0xFF6366F1).withValues(alpha: 0.4),
-                                blurRadius: 20,
-                                offset: Offset(0, 8),
-                              ),
+                              BoxShadow(color: const Color(0xFFD500F9).withValues(alpha: 0.4), blurRadius: 12, spreadRadius: 2),
                             ],
                           ),
                           child: Center(
@@ -221,10 +256,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                 ? (l.isEn ? 'Start Adventure' : 'Mulai Petualangan')
                                 : (l.isEn ? 'Continue' : 'Lanjutkan'),
                               style: GoogleFonts.nunito(
-                                color: AppColors.textPrimary,
+                                color: Colors.white,
                                 fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.2,
                               ),
                             ),
                           ),
@@ -241,17 +276,17 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
   }
 
-  // Fungsi untuk mengatur warna gradien latar berdasarkan halaman
-  List<Color> _getBackgroundColors() {
+  // Fungsi untuk mengatur wallpaper latar berdasarkan halaman
+  String _getBackgroundImage() {
     switch (_currentPage) {
       case 0:
-        return [const Color(0xFF1E1B4B), const Color(0xFF0F172A)]; // Ungu Gelap -> Navy
+        return 'lib/assets/wallpaper/wallpaper hutan.png';
       case 1:
-        return [const Color(0xFF064E3B), const Color(0xFF0F172A)]; // Hijau Gelap -> Navy
+        return 'lib/assets/wallpaper/wallpaper_towerdragon.png';
       case 2:
-        return [const Color(0xFF7F1D1D), const Color(0xFF0F172A)]; // Merah Gelap -> Navy
+        return 'lib/assets/wallpaper/wallpaper castle dark.png';
       default:
-        return [const Color(0xFF1E1B4B), const Color(0xFF0F172A)];
+        return 'lib/assets/wallpaper/wallpaper hutan.png';
     }
   }
 
@@ -296,11 +331,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   // --- HALAMAN 1 ---
   Widget _buildPage1(L l) {
     return _PageLayout(
-      title: l.isEn ? 'Turn Life Into\nRPG Game' : 'Ubah Hidup Jadi\nGame RPG',
-      subtitle: l.isEn ? 'Start Your Adventure' : 'Mulai Petualangan',
+      title: l.isEn ? 'Turn Daily Life\nInto an RPG' : 'Ubah Keseharian\nMenjadi RPG',
+      subtitle: l.isEn ? 'Begin the Adventure' : 'Mulai Petualangan',
       description: l.isEn 
-        ? 'Complete your daily habits like quests in a fantasy world. Boost productivity in a fun way.'
-        : 'Selesaikan kebiasaan harianmu layaknya quest di dunia fantasy. Tingkatkan produktivitas dengan cara yang menyenangkan.',
+        ? 'Make every daily task an epic quest. Here, every productivity you achieve is a step to strengthen your character.'
+        : 'Jadikan setiap tugas harianmu sebagai quest epik. Di sini, setiap produktivitas yang kamu lakukan adalah langkah untuk memperkuat karaktermu.',
       fadeAnim: _fadeCtrl,
       visual: Stack(
         alignment: Alignment.center,
@@ -341,11 +376,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   // --- HALAMAN 2 ---
   Widget _buildPage2(L l) {
     return _PageLayout(
-      title: l.isEn ? 'Collect Epic\nRewards' : 'Kumpulkan Hadiah\nEpik',
-      subtitle: l.isEn ? 'Customize Character' : 'Kustomisasi Karakter',
+      title: l.isEn ? 'Claim Epic\nLoot & Rewards' : 'Raih Loot &\nHadiah Epik',
+      subtitle: l.isEn ? 'Legendary Equipment' : 'Kustomisasi Karakter',
       description: l.isEn
-        ? 'Earn coins from every completed task. Buy equipment, pets, and change your appearance as you like.'
-        : 'Dapatkan koin dari setiap tugas yang selesai. Beli equipment, peliharaan, dan ubah penampilan sesukamu.',
+        ? 'Gather gold from your successes. Exchange it for legendary equipment, pets, and customize your character to your heart\'s content.'
+        : 'Kumpulkan gold dari setiap keberhasilanmu. Tukarkan dengan equipment legendaris, peliharaan, dan kustomisasi karakter sesuka hatimu.',
       fadeAnim: _fadeCtrl,
       visual: Stack(
         alignment: Alignment.center,
@@ -410,11 +445,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   // --- HALAMAN 3 ---
   Widget _buildPage3(L l) {
     return _PageLayout(
-      title: l.isEn ? 'Defeat Laziness\nMonsters' : 'Taklukkan Monster\nKemalasan',
-      subtitle: l.isEn ? 'Level Up' : 'Naikkan Levelmu',
+      title: l.isEn ? 'Conquer the\nLaziness Monster' : 'Taklukkan Monster\nKemalasan',
+      subtitle: l.isEn ? 'Defeat the Boss' : 'Kalahkan Bos',
       description: l.isEn
-        ? 'Don\'t let tasks pile up! Defeat monsters by completing tasks and reach the highest rank.'
-        : 'Jangan biarkan tugas menumpuk! Kalahkan monster dengan menyelesaikan tugas dan capai rank tertinggi.',
+        ? 'Don\'t let tasks pile up or the monster will attack you! Complete your missions, defeat the laziness boss, and achieve the highest rank.'
+        : 'Jangan biarkan tugas terbengkalai atau monster akan menyerangmu! Selesaikan misimu, kalahkan bos kemalasan, dan raih peringkat tertinggi.',
       fadeAnim: _fadeCtrl,
       visual: Stack(
         alignment: Alignment.center,
@@ -509,29 +544,37 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       width: size + 30,
       height: size + 30,
       decoration: BoxDecoration(
-        color: Color(0xFF1E293B).withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(20),
+        color: const Color(0xFF0F0C1B), // Dark stone
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isMythic ? Colors.amber.withValues(alpha: 0.7) : AppColors.textPrimary.withValues(alpha: 0.2),
-          width: isMythic ? 2 : 1,
+          color: isMythic ? const Color(0xFFFFD700) : const Color(0xFF311B92),
+          width: isMythic ? 3 : 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textPrimary.withValues(alpha: 0.3),
+            color: isMythic ? const Color(0xFFFFD700).withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.7),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
+          if (isMythic)
+            BoxShadow(color: const Color(0xFFFFD700).withValues(alpha: 0.2), blurRadius: 30, spreadRadius: -5),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Center(
-          child: Image.asset(
-            path,
-            width: size,
-            height: size,
-            fit: BoxFit.contain,
-            errorBuilder: (_,__,___) => const SizedBox(),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF7E57C2).withValues(alpha: 0.3), width: 1.5),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Center(
+            child: Image.asset(
+              path,
+              width: size,
+              height: size,
+              fit: BoxFit.contain,
+              errorBuilder: (_,__,___) => const SizedBox(),
+            ),
           ),
         ),
       ),
@@ -578,14 +621,15 @@ class _PageLayout extends StatelessWidget {
             opacity: fadeAnim,
             child: Column(
               children: [
-                // Subjudul (Warna Ungu)
+                // Subjudul (Warna Emas)
                 Text(
                   subtitle.toUpperCase(),
-                  style: GoogleFonts.outfit(
-                    color: Color(0xFFA78BFA),
+                  style: GoogleFonts.nunito(
+                    color: const Color(0xFFFFD700), // Emas
                     fontSize: 13,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
                     letterSpacing: 2,
+                    shadows: [const Shadow(color: Colors.black, blurRadius: 4)],
                   ),
                 ),
                 SizedBox(height: 12),
@@ -593,11 +637,15 @@ class _PageLayout extends StatelessWidget {
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.outfit(
-                    color: AppColors.textPrimary,
+                  style: GoogleFonts.nunito(
+                    color: const Color(0xFFF3E5F5),
                     fontSize: 32,
                     fontWeight: FontWeight.w900,
                     height: 1.2,
+                    shadows: [
+                      const Shadow(color: Color(0xFF673AB7), blurRadius: 15),
+                      const Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(2, 2)),
+                    ],
                   ),
                 ),
                 SizedBox(height: 20),
@@ -606,10 +654,11 @@ class _PageLayout extends StatelessWidget {
                   description,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.nunito(
-                    color: AppColors.textPrimary.withValues(alpha: 0.7),
+                    color: const Color(0xFFD7CCC8),
                     fontSize: 15,
                     height: 1.6,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.bold,
+                    shadows: [const Shadow(color: Colors.black, blurRadius: 2)],
                   ),
                 ),
               ],

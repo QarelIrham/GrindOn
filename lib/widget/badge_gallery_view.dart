@@ -15,6 +15,10 @@ class BadgeGalleryView extends StatelessWidget {
   final int streak;
   final Map<String, int> categoryXp;
   final Color accentColor;
+  final List<String>? claimedBadges;
+  final List<String>? equippedBadges;
+  final Function(AppBadge)? onClaimBadge;
+  final Function(AppBadge)? onEquipBadge;
 
   const BadgeGalleryView({
     super.key,
@@ -24,6 +28,10 @@ class BadgeGalleryView extends StatelessWidget {
     required this.streak,
     required this.categoryXp,
     required this.accentColor,
+    this.claimedBadges,
+    this.equippedBadges,
+    this.onClaimBadge,
+    this.onEquipBadge,
   });
 
   @override
@@ -46,7 +54,42 @@ class BadgeGalleryView extends StatelessWidget {
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 16, mainAxisSpacing: 16, childAspectRatio: 0.8),
           itemBuilder: (context, index) {
             final badge = BadgeSystem.allBadges[index];
-            return BadgeCard(badge: badge, isUnlocked: _isBadgeUnlocked(badge), progress: _getBadgeProgress(badge));
+            final unlocked = _isBadgeUnlocked(badge);
+            final claimed = claimedBadges?.contains(badge.id) ?? false;
+            final equipped = equippedBadges?.contains(badge.id) ?? false;
+
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: BadgeCard(
+                    badge: badge, 
+                    isUnlocked: unlocked, 
+                    progress: _getBadgeProgress(badge),
+                    isClaimed: claimed,
+                    isEquipped: equipped,
+                    onTapButton: unlocked ? () {
+                      if (!claimed) {
+                        onClaimBadge?.call(badge);
+                      } else {
+                        onEquipBadge?.call(badge);
+                      }
+                    } : null,
+                  ),
+                ),
+                if (equipped)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Icon(Icons.check_circle, color: accentColor, size: 24),
+                  ),
+                if (claimed && !equipped)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Icon(Icons.check_circle_outline, color: Colors.grey, size: 24),
+                  ),
+              ],
+            );
           },
         ),
       ],

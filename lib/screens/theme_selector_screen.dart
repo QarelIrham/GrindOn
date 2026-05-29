@@ -24,7 +24,7 @@ class ThemeSelectorScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            AudioService.playClick();
+            // AudioService.playClick();
             Navigator.pop(context);
           },
         ),
@@ -60,7 +60,7 @@ class ThemeSelectorScreen extends StatelessWidget {
               themeType: themeType,
               isSelected: isSelected,
               onTap: () async {
-                AudioService.playClick();
+                // AudioService.playClick();
                 await themeService.setTheme(themeType);
               },
             );

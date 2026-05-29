@@ -40,7 +40,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - lib/assets/audio/
+    - assets/audio/
     - lib/assets/Body1Set/
     - lib/assets/Head/
     - lib/assets/armor/

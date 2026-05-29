@@ -105,7 +105,7 @@ class _FocusTimerScreenState extends State<FocusTimerScreen>
       TaskSchema.timerStartAt: FieldValue.serverTimestamp(),
     });
 
-    AudioService.playClick();
+    // AudioService.playClick();
     setState(() => _isRunning = true);
 
     // 2. Menyalakan Detak Jantung Timer (Ticker)
@@ -129,7 +129,7 @@ class _FocusTimerScreenState extends State<FocusTimerScreen>
 
   // Fungsi untuk jeda (pause) atau melanjutkan (resume) timer
   void _togglePause() {
-    AudioService.playClick();
+    // AudioService.playClick();
     HapticFeedback.lightImpact();
     setState(() => _isPaused = !_isPaused);
   }

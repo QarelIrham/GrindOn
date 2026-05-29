@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/auth_service.dart';
 import '../services/locale_service.dart';
+import '../services/audio_service.dart';
+import 'package:provider/provider.dart';
 import 'register_screen.dart';
 import 'home_screen.dart';
 import '../theme/app_theme.dart';
+import '../l10n/app_locale.dart';
 
 
 // ── Layar Masuk (Login Screen) ──────────────────────────────────
@@ -25,6 +28,7 @@ class _LoginScreenState extends State<LoginScreen>
   bool _isLoading = false;
   bool _obscurePass = true;
   String? _errorMsg;
+  bool _isMusicEnabled = true;
 
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
@@ -35,6 +39,11 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void initState() {
     super.initState();
+    _isMusicEnabled = AudioService.isMusicEnabled;
+    if (_isMusicEnabled) {
+      AudioService.playBgm();
+    }
+    
     _animCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
     _slideAnim = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
@@ -52,13 +61,22 @@ class _LoginScreenState extends State<LoginScreen>
 
   // --- FUNGSI LOGIN (MASUK AKUN) ---
   Future<void> _login() async {
+    final username = _usernameCtrl.text.trim();
+    final password = _passCtrl.text.trim();
+    
+    if (username.isEmpty || password.isEmpty) {
+      final isEn = Provider.of<LocaleService>(context, listen: false).isEnglish;
+      setState(() { _errorMsg = isEn ? 'Username and password cannot be empty' : 'Username dan password tidak boleh kosong'; });
+      return;
+    }
+
     // 1. Tampilkan animasi muter (Loading) dan hapus pesan error sebelumnya
     setState(() { _isLoading = true; _errorMsg = null; });
     
     // 2. Tembak ke AuthService (Firebase Authentication)
     // AuthService ini mengurus komunikasi langsung ke server Google/Firebase
     final error = await _auth.loginWithUsername(
-      username: _usernameCtrl.text.trim(), password: _passCtrl.text.trim());
+      username: username, password: password);
     
     if (!mounted) return; // Cegah error jika layar sudah ditutup
 
@@ -108,173 +126,347 @@ class _LoginScreenState extends State<LoginScreen>
   Widget build(BuildContext context) {
     final l = context.lw;
     return Scaffold(
-      body: Stack(children: [
-        // BG gradient
-        Container(decoration: BoxDecoration(gradient: LinearGradient(
-          begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          colors: [Color(0xFF4C1D95), Color(0xFF2E1065), Color(0xFF1E1B4B)],
-        ))),
-        // Stars
-        ..._buildStars(),
-        // Wallpaper bottom
-        Positioned(bottom: 0, left: 0, right: 0, height: MediaQuery.of(context).size.height * 0.3,
-          child: Image.asset('lib/assets/wallpaper/wallpaper hutan.png', fit: BoxFit.cover,
-            color: AppColors.textPrimary.withValues(alpha: 0.6), colorBlendMode: BlendMode.darken,
-            errorBuilder: (_, __, ___) => SizedBox()),
-        ),
-        Positioned(bottom: 0, left: 0, right: 0, height: MediaQuery.of(context).size.height * 0.35,
-          child: Container(decoration: BoxDecoration(gradient: LinearGradient(
-            begin: Alignment.topCenter, end: Alignment.bottomCenter,
-            colors: [Color(0xFF1E1B4B), Colors.transparent], stops: [0.0, 0.4],
-          ))),
-        ),
-        // Content
-        SafeArea(child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: FadeTransition(opacity: _fadeAnim, child: SlideTransition(
-            position: _slideAnim,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-              SizedBox(height: 50),
-              // Logo
-              Container(
-                padding: const EdgeInsets.all(8), // Kurangi padding agar logo lebih besar
-                decoration: BoxDecoration(
-                  color: purple.withValues(alpha: 0.15), shape: BoxShape.circle,
-                  border: Border.all(color: purple.withValues(alpha: 0.4), width: 2),
-                  boxShadow: [BoxShadow(color: purple.withValues(alpha: 0.3), blurRadius: 20, spreadRadius: 4)],
-                ),
-                child: ClipOval(
-                  child: Image.asset(
-                    'lib/assets/logo/Logo_GrindOn.png',
-                    width: 80,
-                    height: 80,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
-              FittedBox(
-                child: Text('GrindOn', style: GoogleFonts.nunito(
-                  fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white,
-                  letterSpacing: 1.2,
-                )),
-              ),
-              Text(l.isEn ? 'Continue your adventure' : 'Lanjutkan petualanganmu', style: GoogleFonts.nunito(
-                color: AppColors.textPrimary.withValues(alpha: 0.54), fontSize: 14)),
-              SizedBox(height: 36),
-              // Form card
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBackground.withValues(alpha: 0.85),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppColors.textPrimary.withValues(alpha: 0.08)),
-                  boxShadow: [BoxShadow(color: AppColors.textPrimary.withValues(alpha: 0.3), blurRadius: 20)],
-                ),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(l.authLogin, style: GoogleFonts.nunito(
-                    color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w800)),
-                  SizedBox(height: 20),
-                  _label(l.authUsername),
-                  SizedBox(height: 8),
-                  _inputField(controller: _usernameCtrl, hint: l.isEn ? 'your username' : 'username kamu', icon: Icons.person_outline_rounded),
-                  SizedBox(height: 16),
-                  _label(l.authPassword),
-                  SizedBox(height: 8),
-                  _inputField(
-                    controller: _passCtrl, hint: '••••••••', icon: Icons.lock_outline_rounded,
-                    obscure: _obscurePass,
-                    suffix: IconButton(
-                      icon: Icon(_obscurePass ? Icons.visibility_off : Icons.visibility, color: AppColors.textPrimary.withValues(alpha: 0.38), size: 20),
-                      onPressed: () => setState(() => _obscurePass = !_obscurePass)),
-                  ),
-                  SizedBox(height: 8),
-                  Align(alignment: Alignment.centerRight, child: GestureDetector(
-                    onTap: _forgotPassword,
-                    child: Text(l.isEn ? 'Forgot password?' : 'Lupa password?', style: GoogleFonts.nunito(
-                      color: Color(0xFFA78BFA), fontSize: 13, fontWeight: FontWeight.w600)),
-                  )),
-                  SizedBox(height: 12),
-                  if (_errorMsg != null) _errorBox(_errorMsg!),
-                  if (_errorMsg != null) SizedBox(height: 12),
-                  // Login button
-                  SizedBox(width: double.infinity, height: 52, child: ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: purple,
-                      disabledBackgroundColor: purple.withValues(alpha: 0.5),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      elevation: 0,
+      body: Stack(
+        children: [
+          // 1. Wallpaper Gelap Full Screen
+          Positioned.fill(
+            child: Image.asset(
+              'lib/assets/wallpaper/wallpaper castle dark.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+
+          // 2. Konten Utama
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: FadeTransition(
+                  opacity: _fadeAnim,
+                  child: SlideTransition(
+                    position: _slideAnim,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      alignment: Alignment.center,
+                      children: [
+                        // Tombol samping (Volume & List)
+                        Positioned(
+                          left: -24,
+                          top: 40,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _isMusicEnabled = !_isMusicEnabled;
+                                  });
+                                  AudioService.toggleBgm(_isMusicEnabled);
+                                },
+                                child: _buildSideButton(_isMusicEnabled ? Icons.music_note_rounded : Icons.music_off_rounded),
+                              ),
+                              const SizedBox(height: 12),
+                              GestureDetector(
+                                onTap: () {
+                                  final localeService = Provider.of<LocaleService>(context, listen: false);
+                                  localeService.setLang(localeService.isEnglish ? AppLang.id : AppLang.en);
+                                },
+                                child: _buildSideButton(Icons.language_rounded),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const SizedBox(height: 20),
+                            
+                            // Crest Logo
+                            _buildLogoCrest(),
+                            const SizedBox(height: 16),
+                            
+                            // Title "GrindOn"
+                            Text(
+                              'GrindOn',
+                              style: GoogleFonts.nunito(
+                                fontSize: 42,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 2,
+                                color: const Color(0xFFF3E5F5),
+                                shadows: [
+                                  const Shadow(color: Color(0xFF673AB7), blurRadius: 15, offset: Offset(0, 0)),
+                                  const Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(2, 2)),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              l.isEn ? 'Continue your adventure' : 'Lanjutkan petualanganmu',
+                              style: GoogleFonts.nunito(
+                                color: const Color(0xFFCE93D8),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1,
+                                shadows: [const Shadow(color: Colors.black, blurRadius: 4)],
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+
+                            // Papan Batu / Metal (Login Box)
+                            _buildStoneBoard(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _label(l.authUsername),
+                                  const SizedBox(height: 6),
+                                  _inputField(controller: _usernameCtrl, hint: l.isEn ? 'your_username' : 'username_kamu', icon: Icons.person_outline_rounded),
+                                  const SizedBox(height: 16),
+                                  
+                                  _label(l.authPassword),
+                                  const SizedBox(height: 6),
+                                  _inputField(
+                                    controller: _passCtrl,
+                                    hint: '••••••••',
+                                    icon: Icons.lock_outline_rounded,
+                                    obscure: _obscurePass,
+                                    suffix: _eyeBtn(_obscurePass, () => setState(() => _obscurePass = !_obscurePass)),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: GestureDetector(
+                                      onTap: _forgotPassword,
+                                      child: Text(
+                                        l.isEn ? 'Forgot password?' : 'Lupa password?',
+                                        style: GoogleFonts.nunito(
+                                          color: const Color(0xFFE1BEE7),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  
+                                  if (_errorMsg != null) ...[
+                                    const SizedBox(height: 16),
+                                    _errorBox(_errorMsg!),
+                                  ],
+                                  
+                                  const SizedBox(height: 24),
+                                  
+                                  // Login button
+                                  _buildCrystalButton(
+                                    text: l.authLoginBtn,
+                                    onPressed: _isLoading ? null : _login,
+                                    isLoading: _isLoading,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            
+                            const SizedBox(height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  l.authNoAccount,
+                                  style: GoogleFonts.nunito(
+                                    color: const Color(0xFFD7CCC8),
+                                    fontSize: 14,
+                                    shadows: [const Shadow(color: Colors.black, blurRadius: 2)],
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                GestureDetector(
+                                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
+                                  child: Text(
+                                    l.authRegister,
+                                    style: GoogleFonts.nunito(
+                                      color: const Color(0xFFE1BEE7),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      shadows: [const Shadow(color: Colors.black, blurRadius: 2)],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 40),
+                          ],
+                        ),
+                      ],
                     ),
-                    child: _isLoading
-                      ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: AppColors.textOnPrimary, strokeWidth: 2))
-                      : Text(l.authLoginBtn, style: GoogleFonts.nunito(color: AppColors.textOnPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
-                  )),
-                ]),
-              ),
-              SizedBox(height: 24),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text(l.authNoAccount, style: GoogleFonts.nunito(color: AppColors.textPrimary.withValues(alpha: 0.54), fontSize: 14)),
-                const SizedBox(width: 4),
-                GestureDetector(
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
-                  child: Text(l.authRegister, style: GoogleFonts.nunito(
-                    color: const Color(0xFFA78BFA), fontSize: 14, fontWeight: FontWeight.w700)),
+                  ),
                 ),
-              ]),
-              const SizedBox(height: 40),
-            ]),
-          )),
-        )),
-      ]),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  // ─── Helpers ───────────────────────
-  Widget _label(String text) => Text(text, style: GoogleFonts.nunito(
-    color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600));
+  // ─── Elemen UI Kustom ───────────────────────
+
+  Widget _buildSideButton(IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1525),
+        borderRadius: const BorderRadius.only(topRight: Radius.circular(16), bottomRight: Radius.circular(16)),
+        border: Border.all(color: const Color(0xFF4527A0), width: 2),
+        boxShadow: [BoxShadow(color: const Color(0xFF673AB7).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(2, 2))],
+      ),
+      child: Icon(icon, color: const Color(0xFFE1BEE7), size: 24),
+    );
+  }
+
+  Widget _buildLogoCrest() {
+    return Container(
+      width: 100,
+      height: 100,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xFF0F0C1B),
+        border: Border.all(color: const Color(0xFF7E57C2), width: 3),
+        boxShadow: const [
+          BoxShadow(color: Colors.black54, blurRadius: 10, spreadRadius: 2, offset: Offset(0, 4)),
+          BoxShadow(color: Color(0xFF673AB7), blurRadius: 20, spreadRadius: -5), // Inner glow
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Image.asset('lib/assets/logo/Logo_GrindOn.png', fit: BoxFit.contain),
+      ),
+    );
+  }
+
+  Widget _buildStoneBoard({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1A1525), Color(0xFF0F0C1B)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF311B92), width: 3),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.7), blurRadius: 20, offset: const Offset(0, 10)),
+          BoxShadow(color: const Color(0xFF673AB7).withValues(alpha: 0.15), blurRadius: 30, spreadRadius: -5),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  Widget _label(String text) => Text(
+        text,
+        style: GoogleFonts.nunito(
+          color: const Color(0xFFE1BEE7),
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+
+  Widget _eyeBtn(bool vis, VoidCallback onTap) => IconButton(
+        icon: Icon(
+          vis ? Icons.visibility_off : Icons.visibility,
+          color: const Color(0xFF7E57C2),
+          size: 20,
+        ),
+        onPressed: onTap,
+      );
 
   Widget _inputField({
-    required TextEditingController controller, required String hint,
-    required IconData icon, bool obscure = false, Widget? suffix,
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool obscure = false,
+    Widget? suffix,
   }) {
-    return TextField(
-      controller: controller, obscureText: obscure,
-      style: GoogleFonts.nunito(color: AppColors.textPrimary, fontSize: 14),
-      decoration: InputDecoration(
-        hintText: hint, hintStyle: GoogleFonts.nunito(color: AppColors.textPrimary.withValues(alpha: 0.38), fontSize: 14),
-        prefixIcon: Icon(icon, color: AppColors.textPrimary.withValues(alpha: 0.38), size: 20), suffixIcon: suffix,
-        filled: true, fillColor: AppColors.textPrimary.withValues(alpha: 0.06),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.textPrimary.withValues(alpha: 0.1))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: AppColors.textPrimary.withValues(alpha: 0.1))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF7C3AED), width: 1.5)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A0710), // Batu sangat gelap (cekung)
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF311B92).withValues(alpha: 0.5), width: 1.5), 
+        boxShadow: const [
+          BoxShadow(color: Colors.white12, offset: Offset(0, 1)), // Fake bottom highlight
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: obscure,
+        style: GoogleFonts.nunito(color: const Color(0xFFF3E5F5), fontSize: 16),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.nunito(color: const Color(0xFF7E57C2), fontSize: 14),
+          prefixIcon: Icon(icon, color: const Color(0xFF7E57C2), size: 20),
+          suffixIcon: suffix,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCrystalButton({required String text, required VoidCallback? onPressed, required bool isLoading}) {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFD500F9), Color(0xFF6A1B9A)],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        border: Border.all(color: const Color(0xFF311B92), width: 3),
+        boxShadow: [
+          BoxShadow(color: const Color(0xFFD500F9).withValues(alpha: 0.4), blurRadius: 12, spreadRadius: 2),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: isLoading
+            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : Text(
+                text,
+                style: GoogleFonts.nunito(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                ),
+              ),
       ),
     );
   }
 
   Widget _errorBox(String msg) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: const Color(0x1AEF4444), borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: const Color(0x4DEF4444)),
-    ),
-    child: Row(children: [
-      const Icon(Icons.error_outline, color: Colors.redAccent, size: 18),
-      const SizedBox(width: 8),
-      Expanded(child: Text(msg, style: GoogleFonts.nunito(color: Colors.redAccent, fontSize: 13))),
-    ]),
-  );
-
-  List<Widget> _buildStars() => [
-    _star(30,100,3,0.3), _star(80,180,2,0.2), _star(150,60,4,0.4),
-    _star(250,130,2,0.15), _star(300,280,3,0.25), _star(60,420,2,0.2),
-    _star(320,480,4,0.35), _star(200,560,2,0.15),
-  ];
-
-  Widget _star(double x, double y, double s, double o) => Positioned(left: x, top: y, child: Container(
-    width: s, height: s, decoration: BoxDecoration(
-      color: AppColors.textPrimary.withValues(alpha: o), shape: BoxShape.circle,
-      boxShadow: [BoxShadow(color: AppColors.textPrimary.withValues(alpha: o * 0.5), blurRadius: s * 2)]),
-  ));
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2A1015),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.7)),
+          boxShadow: [BoxShadow(color: Colors.redAccent.withValues(alpha: 0.2), blurRadius: 10)],
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(msg, style: GoogleFonts.nunito(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
 }

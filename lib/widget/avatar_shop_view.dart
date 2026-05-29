@@ -231,7 +231,7 @@ class _AvatarShopViewState extends State<AvatarShopView> {
                             ],
                             SizedBox(height: 2),
                             if (!isUnlocked)
-                              Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.stars, size: 12, color: tierColor), SizedBox(width: 4), Text('${item.price}', style: GoogleFonts.outfit(fontSize: 11, color: tierColor, fontWeight: FontWeight.bold))])
+                              Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.monetization_on_rounded, size: 14, color: AppColors.gold), SizedBox(width: 4), Text('${item.price}', style: GoogleFonts.outfit(fontSize: 12, color: tierColor, fontWeight: FontWeight.bold))])
                             else
                               Text(isEquipped ? l.shopEquipped.toUpperCase() : (l.isEn ? 'OWNED' : 'DIMILIKI'), style: GoogleFonts.outfit(fontSize: 10, color: isEquipped ? tierColor : Colors.greenAccent, fontWeight: FontWeight.w900, letterSpacing: 1)),
                           ],

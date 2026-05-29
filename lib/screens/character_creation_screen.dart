@@ -152,25 +152,21 @@ class _CharacterCreationScreenState extends State<CharacterCreationScreen>
     final l = context.lw; // Kamus Bahasa (Localization)
     return Scaffold(
       body: Stack(children: [
-        // Lapisan 1 Terbawah: Latar Belakang Gradasi Ungu
-        Container(decoration: BoxDecoration(gradient: LinearGradient(
-          begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          colors: [Color(0xFF7C3AED), Color(0xFF6D28D9), Color(0xFF4C1D95)],
-        ))),
+        // Latar Belakang Wallpaper RPG
+        Positioned.fill(
+          child: Image.asset(
+            'lib/assets/wallpaper/wallpaper_celestial.png',
+            fit: BoxFit.cover,
+          ),
+        ),
+        // Overlay Gelap agar teks terbaca
+        Positioned.fill(
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.75),
+          ),
+        ),
         
-        // Lapisan 2: Gambar Hutan transparan di bagian paling bawah
-        Positioned(bottom: 0, left: 0, right: 0, height: MediaQuery.of(context).size.height * 0.22,
-          child: Image.asset('lib/assets/wallpaper/wallpaper hutan.png', fit: BoxFit.cover,
-            color: AppColors.textPrimary.withValues(alpha: 0.55), colorBlendMode: BlendMode.darken,
-            errorBuilder: (_, __, ___) => const SizedBox())),
-            
-        // Lapisan 3: Efek bayangan gradasi (Shadow) agar menyatu dengan hutan
-        Positioned(bottom: 0, left: 0, right: 0, height: MediaQuery.of(context).size.height * 0.28,
-          child: Container(decoration: const BoxDecoration(gradient: LinearGradient(
-            begin: Alignment.topCenter, end: Alignment.bottomCenter,
-            colors: [Color(0xFF4C1D95), Colors.transparent], stops: [0.0, 0.45])))),
-            
-        // Lapisan 4 Paling Atas: Konten (Tergantung nilai _step: 0 atau 1)
+        // Lapisan Paling Atas: Konten (Tergantung nilai _step: 0 atau 1)
         SafeArea(child: _step == 0 ? _buildGenderStep(l) : _buildHeadStep(l)),
       ]),
     );
@@ -182,14 +178,20 @@ class _CharacterCreationScreenState extends State<CharacterCreationScreen>
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(children: [
         SizedBox(height: 48),
-        Text(l.charCreateSubtitle, style: GoogleFonts.nunito(
-          color: AppColors.textPrimary.withValues(alpha: 0.8), fontSize: 16, fontWeight: FontWeight.w600)),
+        Text(l.charCreateSubtitle.toUpperCase(), style: GoogleFonts.nunito(
+          color: const Color(0xFFFFD700), fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1.5,
+          shadows: [const Shadow(color: Colors.black, blurRadius: 4)])),
         SizedBox(height: 6),
         Text(l.charSelectGender, style: GoogleFonts.nunito(
-          color: AppColors.textPrimary, fontSize: 32, fontWeight: FontWeight.w900)),
+          color: const Color(0xFFF3E5F5), fontSize: 32, fontWeight: FontWeight.w900,
+          shadows: [
+            const Shadow(color: Color(0xFF673AB7), blurRadius: 15),
+            const Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(2, 2)),
+          ])),
         SizedBox(height: 8),
         Text(l.charGenderHint, style: GoogleFonts.nunito(
-          color: AppColors.textPrimary.withValues(alpha: 0.45), fontSize: 13)),
+          color: const Color(0xFFD7CCC8), fontSize: 14, fontWeight: FontWeight.bold,
+          shadows: [const Shadow(color: Colors.black, blurRadius: 2)])),
         Spacer(flex: 1), // Mendorong sisa layar ke bawah
         
         // Deretan Tombol Ikon (Pria & Wanita)
@@ -201,16 +203,36 @@ class _CharacterCreationScreenState extends State<CharacterCreationScreen>
         Spacer(flex: 2), // Mendorong sisa layar ke bawah
         
         // Tombol Lanjut (Pilih Gaya Kepala)
-        SizedBox(width: double.infinity, height: 54, child: ElevatedButton(
-          onPressed: _goToHeadSelection,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF4C2A85),
-            foregroundColor: AppColors.textPrimary,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 0,
+        GestureDetector(
+          onTap: _goToHeadSelection,
+          child: Container(
+            width: double.infinity,
+            height: 56,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: const LinearGradient(
+                colors: [Color(0xFFD500F9), Color(0xFF6A1B9A)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              border: Border.all(color: const Color(0xFF311B92), width: 3),
+              boxShadow: [
+                BoxShadow(color: const Color(0xFFD500F9).withValues(alpha: 0.4), blurRadius: 12, spreadRadius: 2),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                l.charSelectHeadBtn,
+                style: GoogleFonts.nunito(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
           ),
-          child: Text(l.charSelectHeadBtn, style: GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w700)),
-        )),
+        ),
         const SizedBox(height: 40),
       ]),
     ));
@@ -271,10 +293,16 @@ class _CharacterCreationScreenState extends State<CharacterCreationScreen>
           ),
         )),
         SizedBox(height: 16),
-        Text(l.charSelectStyle, style: GoogleFonts.nunito(
-          color: AppColors.textPrimary.withValues(alpha: 0.8), fontSize: 16, fontWeight: FontWeight.w600)),
+        Text(l.charSelectStyle.toUpperCase(), style: GoogleFonts.nunito(
+          color: const Color(0xFFFFD700), fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1.5,
+          shadows: [const Shadow(color: Colors.black, blurRadius: 4)])),
         SizedBox(height: 4),
-        Text(l.charHead, style: GoogleFonts.nunito(color: AppColors.textPrimary, fontSize: 32, fontWeight: FontWeight.w900)),
+        Text(l.charHead, style: GoogleFonts.nunito(
+          color: const Color(0xFFF3E5F5), fontSize: 32, fontWeight: FontWeight.w900,
+          shadows: [
+            const Shadow(color: Color(0xFF673AB7), blurRadius: 15),
+            const Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(2, 2)),
+          ])),
         SizedBox(height: 24),
 
         // --- PREVIEW KARAKTER LENGKAP (Ini rahasia menggabungkan gambarnya) ---
@@ -321,21 +349,40 @@ class _CharacterCreationScreenState extends State<CharacterCreationScreen>
         Spacer(),
 
         // Tombol Konfirmasi Selesai
-        SizedBox(width: double.infinity, height: 54, child: ElevatedButton(
-          // Jika sedang _isSaving (menyimpan ke internet), matikan fungsi tombol ini (null) agar tidak diklik dua kali
-          onPressed: _isSaving ? null : _saveCharacter,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF4C2A85),
-            disabledBackgroundColor: Color(0xFF4C2A85).withValues(alpha: 0.5),
-            foregroundColor: AppColors.textPrimary,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 0,
+        GestureDetector(
+          onTap: _isSaving ? null : _saveCharacter,
+          child: Container(
+            width: double.infinity,
+            height: 56,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                colors: _isSaving 
+                  ? [const Color(0xFF4A148C), const Color(0xFF311B92)]
+                  : [const Color(0xFFD500F9), const Color(0xFF6A1B9A)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              border: Border.all(color: const Color(0xFF311B92), width: 3),
+              boxShadow: [
+                if (!_isSaving) BoxShadow(color: const Color(0xFFD500F9).withValues(alpha: 0.4), blurRadius: 12, spreadRadius: 2),
+              ],
+            ),
+            child: Center(
+              child: _isSaving
+                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+                : Text(
+                    l.charStartAdventure,
+                    style: GoogleFonts.nunito(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+            ),
           ),
-          child: _isSaving
-            // Munculkan bulatan muter-muter loading jika sedang _isSaving
-            ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: AppColors.textPrimary, strokeWidth: 2.5))
-            : Text(l.charStartAdventure, style: GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w700)),
-        )),
+        ),
         const SizedBox(height: 40),
       ]),
     ));

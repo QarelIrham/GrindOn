@@ -72,7 +72,7 @@ class _RpgTutorialOverlayState extends State<RpgTutorialOverlay>
   // ── Actions ────────────────────────────────────────────────────────────────
   void _nextStep() {
     HapticFeedback.mediumImpact();
-    AudioService.playClick();
+    // AudioService.playClick();
     if (_currentStep < widget.steps.length - 1) {
       _fadeController.reverse().then((_) {
         if (mounted) {
@@ -87,7 +87,7 @@ class _RpgTutorialOverlayState extends State<RpgTutorialOverlay>
 
   void _skipTutorial() {
     HapticFeedback.mediumImpact();
-    AudioService.playClick();
+    // AudioService.playClick();
     widget.onSkipped();
   }
 
