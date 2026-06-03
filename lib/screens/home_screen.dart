@@ -81,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int? _lastLevel;
   String _role = 'user';
   int _currentIndex = 0;
+  bool _isRecentExpanded = false;
   final Map<String, bool> _expandedCats = {};
   Map<String, String> _equippedItems = {};
   Timestamp? _xpBonusUntil;
@@ -192,7 +193,13 @@ class _HomeScreenState extends State<HomeScreen> {
     agi: d[UserSchema.agilityXp] ?? 0,
   );
 
-  Color _getRankColor(String r) => Color(RankSystem.rankColorHex(r));
+  Color _getRankColor(String r) {
+    Color color = Color(RankSystem.rankColorHex(r));
+    if ((AppColors.currentTheme == AppThemeType.lightMode || AppColors.currentTheme == AppThemeType.anime) && color == const Color(0xFFFFFFFF)) {
+      return AppColors.primary; // Make SSR visible in light/anime modes
+    }
+    return color;
+  }
 
   int _xpNext(int lv) => 100 + (lv - 1) * 50;
 
@@ -879,7 +886,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ThemeCard(
                   backgroundColor: AppColors.surface,
                   borderRadius: BorderRadius.circular(14),
-                  borderColor: AppColors.primary,
+                  borderColor: AppColors.primary.withValues(alpha: 0.3),
                   borderWidth: AppColors.borderWidth * 2,
                   boxShadow: [
                     BoxShadow(
@@ -1332,7 +1339,9 @@ class _HomeScreenState extends State<HomeScreen> {
           if (tB == null) return -1;
           return tB.compareTo(tA);
         });
-        if (docs.length > 3) docs = docs.sublist(0, 3);
+        final totalDocs = docs.length;
+        if (!_isRecentExpanded && docs.length > 3) docs = docs.sublist(0, 3);
+        else if (_isRecentExpanded && docs.length > 10) docs = docs.sublist(0, 10);
         if (docs.isEmpty) {
           return Container(
             padding: const EdgeInsets.all(16),
@@ -1355,7 +1364,7 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           borderColor: AppColors.cardBorder,
           child: Column(
-            children: docs.asMap().entries.map((e) {
+            children: docs.asMap().entries.map<Widget>((e) {
               final i = e.key;
               final data = e.value.data() as Map<String, dynamic>;
               final title = data['title'] ?? 'Task';
@@ -1433,7 +1442,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               );
-            }).toList(),
+            }).toList()..addAll([
+              if (totalDocs > 3)
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _isRecentExpanded = !_isRecentExpanded;
+                    });
+                  },
+                  child: Text(
+                    _isRecentExpanded 
+                        ? (context.lw.isEn ? 'Show Less' : 'Tampilkan Lebih Sedikit')
+                        : (context.lw.isEn ? 'Show More' : 'Tampilkan Lebih Banyak'),
+                    style: GoogleFonts.nunito(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ]),
           ),
         );
       },

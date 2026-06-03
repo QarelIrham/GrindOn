@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
+import '../services/locale_service.dart';
 
 class LevelUpOverlay extends StatefulWidget {
   final int newLevel;
@@ -37,6 +38,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
     final color = AppColors.xp; // Purple for XP/Level
 
     return Dialog(
+      elevation: 0,
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: Stack(
@@ -52,7 +54,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
               border: Border.all(color: color, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.3),
+                  color: color.withValues(alpha: 0.3),
                   blurRadius: 40,
                   spreadRadius: 10,
                 ),
@@ -63,7 +65,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
               children: [
                 const SizedBox(height: 40),
                 Text(
-                  'LEVEL UP!',
+                  context.l.notifLevelUpTitle,
                   style: GoogleFonts.nunito(
                     color: AppColors.textPrimary,
                     fontSize: 32,
@@ -79,7 +81,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'You have reached Level ${widget.newLevel}',
+                  context.l.notifLevelUpBody(widget.newLevel),
                   style: GoogleFonts.nunito(
                     color: AppColors.textSecondary,
                     fontSize: 16,
@@ -108,7 +110,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
                     ),
                   ),
                   child: Text(
-                    'AWESOME',
+                    context.l.notifAwesome,
                     style: GoogleFonts.nunito(
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
@@ -131,7 +133,7 @@ class _LevelUpOverlayState extends State<LevelUpOverlay> {
                 border: Border.all(color: color, width: 4),
                 boxShadow: [
                   BoxShadow(
-                    color: color.withOpacity(0.5),
+                    color: color.withValues(alpha: 0.5),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),

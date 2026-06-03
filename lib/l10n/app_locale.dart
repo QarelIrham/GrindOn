@@ -264,7 +264,37 @@ class L {
   String get statsDays            => get('hari', 'days');
   String get statsLeaderboard     => get('Hall of Champions', 'Hall of Champions');
   String get statsYou             => get('(Kamu)',    '(You)');
+  String get statsKamu            => get('Kamu',      'You');
   String get statsViewProfile     => get('Lihat Profil', 'View Profile');
+  
+  // Missing translations for statistic screen and badges
+  String get statsSelesai         => get('Selesai', 'Completed');
+  String get statsGagal           => get('Gagal', 'Failed');
+  String get statsLongest         => get('Terpanjang', 'Longest');
+  String get statsTitleBasedOn    => get('Gelar berdasarkan atribut tertinggimu', 'Title based on your highest attribute');
+  String get statsLogHistory      => get('Log Riwayat Task', 'Task History Log');
+  String get statsViewAchievements=> get('Lihat semua pencapaian Anda', 'View all your achievements');
+  String get statsNoBadge         => get('Belum ada badge yang dipasang', 'No badges equipped');
+  String get statsRankJourney     => get('Perjalanan Rank', 'Rank Journey');
+  String get statsUnlocked        => get('Terbuka!', 'Unlocked!');
+  String get statsPrepareImage    => get('Menyiapkan gambar kartu karakter...', 'Preparing character card image...');
+
+  // ════════════════════════════════════════════════════════
+  //  BADGE SCREEN / CARD
+  // ════════════════════════════════════════════════════════
+  String get badgeUnlocked        => get('Terbuka!', 'Unlocked!');
+  String get badgeUnequip         => get('Dilepas', 'Unequip');
+  String get badgeEquip           => get('Pakai', 'Equip');
+  String get badgeClaim           => get('Klaim', 'Claim');
+
+  // ════════════════════════════════════════════════════════
+  //  RANK & LEVEL UP OVERLAY
+  // ════════════════════════════════════════════════════════
+  String get notifRankUpTitle     => get('NAIK RANK!', 'RANK UP!');
+  String notifRankUpBody(String r)=> get('Kamu telah mencapai Rank $r', 'You have reached Rank $r');
+  String get notifLevelUpTitle    => get('NAIK LEVEL!', 'LEVEL UP!');
+  String notifLevelUpBody(int l)  => get('Kamu telah mencapai Level $l', 'You have reached Level $l');
+  String get notifAwesome         => get('MANTAP', 'AWESOME');
 
   // Dynamic title
   String dynamicTitle(String key) {
@@ -286,7 +316,17 @@ class L {
   // ════════════════════════════════════════════════════════
   String get profileTitle         => get('Profil',       'Profile');
   String get profileSettings      => get('Pengaturan',   'Settings');
+  String get profileTheme         => get('Tema Tampilan','Theme Display');
   String get profileLogout        => get('Keluar',       'Logout');
+
+  // ════════════════════════════════════════════════════════
+  //  THEME SELECTOR SCREEN
+  // ════════════════════════════════════════════════════════
+  String get themeTitle           => get('Pilih Tema', 'Choose Theme');
+  String get themeSubtitle        => get('🎨 Sesuaikan Petualanganmu', '🎨 Customize Your Adventure');
+  String get themeDesc            => get('Pilih tema yang sesuai dengan gayamu', 'Choose a theme that matches your style');
+  String get themeTipTitle        => get('Tip Tema', 'Theme Tip');
+  String get themeTipDesc         => get('Preferensi tema akan disimpan secara otomatis dan diterapkan ke seluruh aplikasi!', 'Your theme preference is saved automatically and will be applied across the entire app!');
   String get profileEditName      => get('Ubah Nama',    'Edit Name');
   String get profileChangeAvatar  => get('Ganti Avatar', 'Change Avatar');
   String get profileSound         => get('Efek Suara',   'Sound Effects');
@@ -511,6 +551,18 @@ class L {
   List<String> get monthShort => isEn
       ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
       : ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+
+  List<String> get dayShort => isEn
+      ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+      : ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+
+  // Performance Chart
+  String get statsPerformanceXp => get('Grafik Kinerja (XP)', 'Performance XP');
+  String get statsNoData => get('Belum ada data', 'No data available');
+  String get statsTab1W => get('1 Mgg', '1 Wk');
+  String get statsTab1M => get('1 Bln', '1 Mo');
+  String get statsTab1Y => get('1 Thn', '1 Yr');
+  String get statsCatAll => get('Semua', 'All');
 
   // ════════════════════════════════════════════════════════
   //  FOCUS TIMER

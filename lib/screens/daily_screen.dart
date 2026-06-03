@@ -18,7 +18,8 @@ import '../theme/rpg_theme.dart';
 import '../theme/app_theme.dart';
 import '../widget/screen_header.dart';
 import '../widget/active_buffs_widget.dart';
-
+import 'package:provider/provider.dart';
+import '../viewmodels/task_viewmodel.dart';
 class DailyScreen extends StatefulWidget {
   const DailyScreen({super.key});
 
@@ -169,7 +170,13 @@ class _DailyScreenState extends State<DailyScreen> {
     agi: d[UserSchema.agilityXp] ?? 0,
   );
 
-  Color _rankColor(String rank) => Color(RankSystem.rankColorHex(rank));
+  Color _rankColor(String rank) {
+    Color color = Color(RankSystem.rankColorHex(rank));
+    if ((AppColors.currentTheme == AppThemeType.lightMode || AppColors.currentTheme == AppThemeType.anime) && color == const Color(0xFFFFFFFF)) {
+      return AppColors.primary;
+    }
+    return color;
+  }
 
   int _xpNext(int level) => 100 + (level - 1) * 50;
 
@@ -190,78 +197,23 @@ class _DailyScreenState extends State<DailyScreen> {
         .snapshots();
   }
 
-  // --- FUNGSI MENGUBAH STATUS TUGAS (CENTANG SELESAI) ---
-  // Fungsi ini dipanggil ketika user menekan kotak centang pada suatu task.
   Future<void> _toggleDone(String taskId, bool current, int diff, String title, String category) async {
-    // 1. Cek Keamanan: Pastikan user sedang login (ada UID-nya)
     if (_uid.isEmpty) return;
-    
-    // 2. Mainkan efek getar HP dan efek suara centang
     HapticFeedback.lightImpact();
     
-    // 3. Tentukan target dokumen task mana yang mau diupdate di Firestore
-    final ref = FirebaseFirestore.instance
-        .collection('users')
-        .doc(_uid)
-        .collection('tasks')
-        .doc(taskId);
-        
-    // 4. Siapkan paket data yang mau diupdate.
-    // Membalik nilai status saat ini (jika false jadi true, jika true jadi false)
-    final Map<String, dynamic> updates = {
-      TaskSchema.done: !current,
-    };
+    final result = await context.read<TaskViewModel>().toggleDone(taskId, current, diff);
     
-    // Jika task baru saja MAU DISELESAIKAN (bukan dibatalkan penyelesaiannya)
-    if (!current) {
-      // Simpan waktu penyelesaian menggunakan jam dari server Google (sangat akurat, anti-cheat)
-      updates[TaskSchema.completedAt] = FieldValue.serverTimestamp();
-    }
-    
-    // 5. Eksekusi pengiriman data status penyelesaian ke Firestore
-    await ref.update(updates);
-    
-    // 6. --- LOGIKA HADIAH (REWARD SYSTEM) ---
-    // Hanya berikan hadiah jika task diubah dari BELUM SELESAI menjadi SELESAI
-    if (!current) {
-      // Daftar hadiah XP berdasarkan tingkat kesulitan (Difficulty: 1, 2, 3, 4)
-      // clamp(0,4) menjaga agar angka tidak pernah error (Out of bounds)
-      final reward = [0, 20, 40, 80, 150][diff.clamp(0, 4)];
-      
-      // Update saldo XP pengguna secara "ATOMIC" (FieldValue.increment).
-      // Kenapa tidak ambil saldo lama lalu ditambah manual? 
-      // Karena increment menjamin data tidak akan dobel/hilang meskipun internet sedang lag.
-      await FirebaseFirestore.instance.collection('users').doc(_uid).update({
-        'xp': FieldValue.increment(reward),
-      });
-      
-      // Jika aplikasi belum tertutup saat loading (mounted)
-      if (mounted) {
-        // Update angka XP di memori lokal agar tulisan di layar langsung berubah tanpa reload
-        setState(() => _xp += reward);
-        
-        // Kalkulasi Hadiah Gold (Emas) -> Seperempat dari total XP yang didapat (dibungkus ke atas/ceil)
-        final int goldReward = (reward / 4).ceil();
-        
-        // Update saldo Gold secara Atomic ke database
-        await FirebaseFirestore.instance.collection('users').doc(_uid).update({
-          UserSchema.gold: FieldValue.increment(goldReward),
-        });
-        
-        // Jika UI masih aktif, panggil overlay animasi konfeti dan tampilkan hadiahnya di tengah layar
-        if (mounted) {
-          CelebrationOverlay.show(
-            context,
-            title: title,
-            category: category,
-            xp: reward,
-            coin: goldReward,
-            userName: _userName,
-            level: _level,
-            equippedItems: _equippedItems,
-          );
-        }
-      }
+    if (result != null && mounted) {
+      CelebrationOverlay.show(
+        context,
+        title: title,
+        category: category,
+        xp: result['xp'] ?? 0,
+        coin: result['coin'] ?? 0,
+        userName: _userName,
+        level: _level,
+        equippedItems: _equippedItems,
+      );
     }
   }
 
@@ -465,7 +417,7 @@ class _DailyScreenState extends State<DailyScreen> {
                 child: ThemeCard(
                   backgroundColor: AppColors.surface,
                   borderRadius: BorderRadius.circular(14),
-                  borderColor: AppColors.primary,
+                  borderColor: AppColors.primary.withValues(alpha: 0.3),
                   borderWidth: AppColors.borderWidth * 2,
                   boxShadow: [
                     BoxShadow(
@@ -935,6 +887,7 @@ class DailyTaskCard extends StatefulWidget {
 
 class DailyTaskCardState extends State<DailyTaskCard>
     with SingleTickerProviderStateMixin {
+  bool _isLoading = false;
   late AnimationController _ctrl;
   late Animation<double> _scale;
 
@@ -1339,16 +1292,22 @@ class DailyTaskCardState extends State<DailyTaskCard>
                           ),
                         )
                       : GestureDetector(
-                          onTap: () {
-                            if (durationMin > 0) {
-                              _openTimer(context, data, id, color);
-                            } else {
-                              final pType = data[TaskSchema.proofType] ?? TaskSchema.proofTypeNone;
-                              if (!done && pType != TaskSchema.proofTypeNone) {
-                                _openProof(context, data, id);
+                          onTap: () async {
+                            if (_isLoading) return;
+                            setState(() => _isLoading = true);
+                            try {
+                              if (durationMin > 0) {
+                                _openTimer(context, data, id, color);
                               } else {
-                                widget.onToggle(id, done, diff, title, cat);
+                                final pType = data[TaskSchema.proofType] ?? TaskSchema.proofTypeNone;
+                                if (!done && pType != TaskSchema.proofTypeNone) {
+                                  _openProof(context, data, id);
+                                } else {
+                                  await widget.onToggle(id, done, diff, title, cat);
+                                }
                               }
+                            } finally {
+                              if (mounted) setState(() => _isLoading = false);
                             }
                           },
                           child: Container(

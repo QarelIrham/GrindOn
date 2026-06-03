@@ -13,6 +13,8 @@ import 'services/audio_service.dart';
 import 'services/locale_service.dart';
 import 'services/notification_service.dart';
 import 'services/theme_service.dart';
+import 'package:daily_development/viewmodels/home_viewmodel.dart';
+import 'package:daily_development/viewmodels/task_viewmodel.dart';
 import 'models/app_schema.dart';
 
 // --- TITIK AWAL APLIKASI (ENTRY POINT) ---
@@ -45,6 +47,8 @@ void main() async {
       providers: [
         ChangeNotifierProvider<LocaleService>.value(value: localeService),
         ChangeNotifierProvider<ThemeService>.value(value: themeService),
+        ChangeNotifierProvider<HomeViewModel>(create: (_) => HomeViewModel()),
+        ChangeNotifierProvider<TaskViewModel>(create: (_) => TaskViewModel()),
       ],
       child: const MyApp(),
     ),

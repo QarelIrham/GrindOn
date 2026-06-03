@@ -188,41 +188,83 @@ class _SettingsSheetState extends State<SettingsSheet> {
   Future<void> _editPassword() async {
     final oldCtrl = TextEditingController();
     final newCtrl = TextEditingController();
+    
     await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.cardBackground,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: AppColors.textPrimary.withValues(alpha: 0.10))),
-        title: Text('Ganti Password', style: GoogleFonts.nunito(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildField(controller: oldCtrl, label: 'Password Lama', icon: Icons.lock_outline, obscure: true),
-            SizedBox(height: 16),
-            _buildField(controller: newCtrl, label: 'Password Baru', icon: Icons.vpn_key_outlined, obscure: true),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('Batal', style: TextStyle(color: AppColors.textPrimary.withValues(alpha: 0.54)))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-            onPressed: () async {
-              if (newCtrl.text.length < 6) {
-                _showError('Minimal 6 karakter.'); return;
-              }
-              Navigator.pop(context);
-              setState(() => _isLoading = true);
-              final err = await _auth.changePassword(oldCtrl.text, newCtrl.text);
-              setState(() => _isLoading = false);
-              if (err != null) {
-                _showError(err);
-              } else {
-                _showSuccess('Password diganti!');
-              }
-            },
-            child: Text('Simpan', style: TextStyle(color: AppColors.textPrimary)),
-          ),
-        ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          bool isDialogLoading = false;
+          String? errorMessage;
+          
+          return AlertDialog(
+            backgroundColor: AppColors.cardBackground,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: AppColors.textPrimary.withValues(alpha: 0.10))),
+            title: Text('Ganti Password', style: GoogleFonts.nunito(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (errorMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.5)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(errorMessage!, style: GoogleFonts.nunito(color: const Color(0xFFEF4444), fontSize: 13, fontWeight: FontWeight.bold))),
+                      ],
+                    ),
+                  ),
+                ],
+                _buildField(controller: oldCtrl, label: 'Password Lama', icon: Icons.lock_outline, obscure: true),
+                SizedBox(height: 16),
+                _buildField(controller: newCtrl, label: 'Password Baru', icon: Icons.vpn_key_outlined, obscure: true),
+                if (isDialogLoading) ...[
+                  SizedBox(height: 16),
+                  LinearProgressIndicator(color: AppColors.primary, backgroundColor: Colors.transparent),
+                ]
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isDialogLoading ? null : () => Navigator.pop(context), 
+                child: Text('Batal', style: TextStyle(color: AppColors.textPrimary.withValues(alpha: 0.54)))
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                onPressed: isDialogLoading ? null : () async {
+                  if (newCtrl.text.length < 6) {
+                    setStateDialog(() => errorMessage = 'Minimal 6 karakter.');
+                    return;
+                  }
+                  
+                  setStateDialog(() {
+                    isDialogLoading = true;
+                    errorMessage = null; // Reset error saat mencoba lagi
+                  });
+                  
+                  final err = await _auth.changePassword(oldCtrl.text, newCtrl.text);
+                  
+                  setStateDialog(() {
+                    isDialogLoading = false;
+                    if (err != null) errorMessage = err;
+                  });
+                  
+                  if (err == null) {
+                    if (context.mounted) Navigator.pop(context);
+                    _showSuccess('Password diganti!');
+                  }
+                },
+                child: Text('Simpan', style: TextStyle(color: AppColors.textPrimary)),
+              ),
+            ],
+          );
+        }
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/app_schema.dart';
 import '../theme/app_theme.dart';
+import '../services/locale_service.dart';
 
 // ── Kartu Lencana (Badge Card) ──────────────────────────────────
 // Widget untuk menampilkan satu lencana (badge) di Galeri Pencapaian.
@@ -86,7 +87,7 @@ class BadgeCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
-              isUnlocked ? 'Terbuka!' : badge.description,
+              isUnlocked ? context.l.badgeUnlocked : badge.description,
               textAlign: TextAlign.center,
               maxLines: 2,
               style: GoogleFonts.nunito(
@@ -122,7 +123,7 @@ class BadgeCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
               ),
               child: Text(
-                isEquipped ? 'Dilepas' : (isClaimed ? 'Pakai' : 'Klaim'),
+                isEquipped ? context.l.badgeUnequip : (isClaimed ? context.l.badgeEquip : context.l.badgeClaim),
                 style: GoogleFonts.nunito(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,

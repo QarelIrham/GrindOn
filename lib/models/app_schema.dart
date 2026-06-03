@@ -483,49 +483,49 @@ class AppBadge {
 class BadgeSystem {
   static const List<AppBadge> allBadges = [
     // --- STRENGTH ---
-    AppBadge(id: "strength_1", name: "Trainee Muscle", description: "Capai 100 XP Strength", icon: "🏋️", flutterIcon: Icons.fitness_center, category: "Strength", threshold: 100, colorHex: 0xFFEF4444),
-    AppBadge(id: "strength_2", name: "Iron Fist", description: "Capai 500 XP Strength", icon: "👊", flutterIcon: Icons.sports_martial_arts, category: "Strength", threshold: 500, colorHex: 0xFFEF4444),
-    AppBadge(id: "strength_3", name: "Warrior", description: "Capai 2000 XP Strength", icon: "⚔️", flutterIcon: Icons.hardware, category: "Strength", threshold: 2000, colorHex: 0xFFEF4444),
-    AppBadge(id: "strength_4", name: "Titan Strength", description: "Capai 5000 XP Strength", icon: "🌋", flutterIcon: Icons.local_fire_department, category: "Strength", threshold: 5000, colorHex: 0xFFEF4444),
-    AppBadge(id: "strength_5", name: "Hercules", description: "Capai 9999 XP Strength", icon: "💪", flutterIcon: Icons.sports_kabaddi, category: "Strength", threshold: 9999, colorHex: 0xFFEF4444),
+    AppBadge(id: "strength_1", name: "Trainee Muscle", description: "Reach 100 XP Strength", icon: "🏋️", flutterIcon: Icons.fitness_center, category: "Strength", threshold: 100, colorHex: 0xFFEF4444),
+    AppBadge(id: "strength_2", name: "Iron Fist", description: "Reach 500 XP Strength", icon: "👊", flutterIcon: Icons.sports_martial_arts, category: "Strength", threshold: 500, colorHex: 0xFFEF4444),
+    AppBadge(id: "strength_3", name: "Warrior", description: "Reach 2000 XP Strength", icon: "⚔️", flutterIcon: Icons.hardware, category: "Strength", threshold: 2000, colorHex: 0xFFEF4444),
+    AppBadge(id: "strength_4", name: "Titan Strength", description: "Reach 5000 XP Strength", icon: "🌋", flutterIcon: Icons.local_fire_department, category: "Strength", threshold: 5000, colorHex: 0xFFEF4444),
+    AppBadge(id: "strength_5", name: "Hercules", description: "Reach 9999 XP Strength", icon: "💪", flutterIcon: Icons.sports_kabaddi, category: "Strength", threshold: 9999, colorHex: 0xFFEF4444),
 
     // --- AGILITY ---
-    AppBadge(id: "agility_1", name: "Quick Steps", description: "Capai 100 XP Agility", icon: "👟", flutterIcon: Icons.directions_run, category: "Agility", threshold: 100, colorHex: 0xFFF59E0B),
-    AppBadge(id: "agility_2", name: "Wind Walker", description: "Capai 500 XP Agility", icon: "🌪️", flutterIcon: Icons.speed, category: "Agility", threshold: 500, colorHex: 0xFFF59E0B),
-    AppBadge(id: "agility_3", name: "Sonic Speed", description: "Capai 2000 XP Agility", icon: "⚡", flutterIcon: Icons.air, category: "Agility", threshold: 2000, colorHex: 0xFFF59E0B),
-    AppBadge(id: "agility_4", name: "Lightning", description: "Capai 5000 XP Agility", icon: "🌩️", flutterIcon: Icons.electric_bolt, category: "Agility", threshold: 5000, colorHex: 0xFFF59E0B),
-    AppBadge(id: "agility_5", name: "Speed Force", description: "Capai 9999 XP Agility", icon: "☄️", flutterIcon: Icons.flight, category: "Agility", threshold: 9999, colorHex: 0xFFF59E0B),
+    AppBadge(id: "agility_1", name: "Quick Steps", description: "Reach 100 XP Agility", icon: "👟", flutterIcon: Icons.directions_run, category: "Agility", threshold: 100, colorHex: 0xFFF59E0B),
+    AppBadge(id: "agility_2", name: "Wind Walker", description: "Reach 500 XP Agility", icon: "🌪️", flutterIcon: Icons.speed, category: "Agility", threshold: 500, colorHex: 0xFFF59E0B),
+    AppBadge(id: "agility_3", name: "Sonic Speed", description: "Reach 2000 XP Agility", icon: "⚡", flutterIcon: Icons.air, category: "Agility", threshold: 2000, colorHex: 0xFFF59E0B),
+    AppBadge(id: "agility_4", name: "Lightning", description: "Reach 5000 XP Agility", icon: "🌩️", flutterIcon: Icons.electric_bolt, category: "Agility", threshold: 5000, colorHex: 0xFFF59E0B),
+    AppBadge(id: "agility_5", name: "Speed Force", description: "Reach 9999 XP Agility", icon: "☄️", flutterIcon: Icons.flight, category: "Agility", threshold: 9999, colorHex: 0xFFF59E0B),
 
     // --- INTELLIGENCE ---
-    AppBadge(id: "intel_1", name: "Bright Mind", description: "Capai 100 XP Intelligence", icon: "💡", flutterIcon: Icons.auto_stories, category: "Intelligence", threshold: 100, colorHex: 0xFF3B82F6),
-    AppBadge(id: "intel_2", name: "Sage Student", description: "Capai 500 XP Intelligence", icon: "📜", flutterIcon: Icons.lightbulb, category: "Intelligence", threshold: 500, colorHex: 0xFF3B82F6),
-    AppBadge(id: "intel_3", name: "Scholar", description: "Capai 2000 XP Intelligence", icon: "📚", flutterIcon: Icons.menu_book, category: "Intelligence", threshold: 2000, colorHex: 0xFF3B82F6),
-    AppBadge(id: "intel_4", name: "Archmage", description: "Capai 5000 XP Intelligence", icon: "🔮", flutterIcon: Icons.psychology, category: "Intelligence", threshold: 5000, colorHex: 0xFF3B82F6),
-    AppBadge(id: "intel_5", name: "Omniscient", description: "Capai 9999 XP Intelligence", icon: "🧠", flutterIcon: Icons.school, category: "Intelligence", threshold: 9999, colorHex: 0xFF3B82F6),
+    AppBadge(id: "intel_1", name: "Bright Mind", description: "Reach 100 XP Intelligence", icon: "💡", flutterIcon: Icons.auto_stories, category: "Intelligence", threshold: 100, colorHex: 0xFF3B82F6),
+    AppBadge(id: "intel_2", name: "Sage Student", description: "Reach 500 XP Intelligence", icon: "📜", flutterIcon: Icons.lightbulb, category: "Intelligence", threshold: 500, colorHex: 0xFF3B82F6),
+    AppBadge(id: "intel_3", name: "Scholar", description: "Reach 2000 XP Intelligence", icon: "📚", flutterIcon: Icons.menu_book, category: "Intelligence", threshold: 2000, colorHex: 0xFF3B82F6),
+    AppBadge(id: "intel_4", name: "Archmage", description: "Reach 5000 XP Intelligence", icon: "🔮", flutterIcon: Icons.psychology, category: "Intelligence", threshold: 5000, colorHex: 0xFF3B82F6),
+    AppBadge(id: "intel_5", name: "Omniscient", description: "Reach 9999 XP Intelligence", icon: "🧠", flutterIcon: Icons.school, category: "Intelligence", threshold: 9999, colorHex: 0xFF3B82F6),
 
     // --- VITALITY ---
-    AppBadge(id: "vital_1", name: "Healthy Soul", description: "Capai 100 XP Vitality", icon: "🥗", flutterIcon: Icons.favorite, category: "Vitality", threshold: 100, colorHex: 0xFF10B981),
-    AppBadge(id: "vital_2", name: "Enduring", description: "Capai 500 XP Vitality", icon: "❤️‍🩹", flutterIcon: Icons.health_and_safety, category: "Vitality", threshold: 500, colorHex: 0xFF10B981),
-    AppBadge(id: "vital_3", name: "Immortal Breath", description: "Capai 2000 XP Vitality", icon: "🍃", flutterIcon: Icons.medical_services, category: "Vitality", threshold: 2000, colorHex: 0xFF10B981),
-    AppBadge(id: "vital_4", name: "Life Force", description: "Capai 5000 XP Vitality", icon: "💖", flutterIcon: Icons.shield, category: "Vitality", threshold: 5000, colorHex: 0xFF10B981),
-    AppBadge(id: "vital_5", name: "World Tree", description: "Capai 9999 XP Vitality", icon: "🌳", flutterIcon: Icons.spa, category: "Vitality", threshold: 9999, colorHex: 0xFF10B981),
+    AppBadge(id: "vital_1", name: "Healthy Soul", description: "Reach 100 XP Vitality", icon: "🥗", flutterIcon: Icons.favorite, category: "Vitality", threshold: 100, colorHex: 0xFF10B981),
+    AppBadge(id: "vital_2", name: "Enduring", description: "Reach 500 XP Vitality", icon: "❤️‍🩹", flutterIcon: Icons.health_and_safety, category: "Vitality", threshold: 500, colorHex: 0xFF10B981),
+    AppBadge(id: "vital_3", name: "Immortal Breath", description: "Reach 2000 XP Vitality", icon: "🍃", flutterIcon: Icons.medical_services, category: "Vitality", threshold: 2000, colorHex: 0xFF10B981),
+    AppBadge(id: "vital_4", name: "Life Force", description: "Reach 5000 XP Vitality", icon: "💖", flutterIcon: Icons.shield, category: "Vitality", threshold: 5000, colorHex: 0xFF10B981),
+    AppBadge(id: "vital_5", name: "World Tree", description: "Reach 9999 XP Vitality", icon: "🌳", flutterIcon: Icons.spa, category: "Vitality", threshold: 9999, colorHex: 0xFF10B981),
 
     // --- DEFENSE ---
-    AppBadge(id: "def_1", name: "Wooden Guard", description: "Capai 100 XP Defense", icon: "🪵", flutterIcon: Icons.security, category: "Defense", threshold: 100, colorHex: 0xFF8B5CF6),
-    AppBadge(id: "def_2", name: "Iron Wall", description: "Capai 500 XP Defense", icon: "🛡️", flutterIcon: Icons.gpp_good, category: "Defense", threshold: 500, colorHex: 0xFF8B5CF6),
-    AppBadge(id: "def_3", name: "Steel Fort", description: "Capai 2000 XP Defense", icon: "🏰", flutterIcon: Icons.shield_moon, category: "Defense", threshold: 2000, colorHex: 0xFF8B5CF6),
-    AppBadge(id: "def_4", name: "Indestructible", description: "Capai 5000 XP Defense", icon: "💎", flutterIcon: Icons.admin_panel_settings, category: "Defense", threshold: 5000, colorHex: 0xFF8B5CF6),
-    AppBadge(id: "def_5", name: "Aegis", description: "Capai 9999 XP Defense", icon: "⛩️", flutterIcon: Icons.castle, category: "Defense", threshold: 9999, colorHex: 0xFF8B5CF6),
+    AppBadge(id: "def_1", name: "Wooden Guard", description: "Reach 100 XP Defense", icon: "🪵", flutterIcon: Icons.security, category: "Defense", threshold: 100, colorHex: 0xFF8B5CF6),
+    AppBadge(id: "def_2", name: "Iron Wall", description: "Reach 500 XP Defense", icon: "🛡️", flutterIcon: Icons.gpp_good, category: "Defense", threshold: 500, colorHex: 0xFF8B5CF6),
+    AppBadge(id: "def_3", name: "Steel Fort", description: "Reach 2000 XP Defense", icon: "🏰", flutterIcon: Icons.shield_moon, category: "Defense", threshold: 2000, colorHex: 0xFF8B5CF6),
+    AppBadge(id: "def_4", name: "Indestructible", description: "Reach 5000 XP Defense", icon: "💎", flutterIcon: Icons.admin_panel_settings, category: "Defense", threshold: 5000, colorHex: 0xFF8B5CF6),
+    AppBadge(id: "def_5", name: "Aegis", description: "Reach 9999 XP Defense", icon: "⛩️", flutterIcon: Icons.castle, category: "Defense", threshold: 9999, colorHex: 0xFF8B5CF6),
 
     // --- STREAK ---
-    AppBadge(id: "streak_1", name: "Warm Up", description: "Capai 3 hari streak", icon: "🔥", flutterIcon: Icons.whatshot, category: "streak", threshold: 3, colorHex: 0xFFF97316),
-    AppBadge(id: "streak_2", name: "Consistent", description: "Capai 7 hari streak", icon: "🌋", flutterIcon: Icons.local_fire_department, category: "streak", threshold: 7, colorHex: 0xFFF97316),
-    AppBadge(id: "streak_3", name: "Unstoppable", description: "Capai 30 hari streak", icon: "☄️", flutterIcon: Icons.flare, category: "streak", threshold: 30, colorHex: 0xFFF97316),
+    AppBadge(id: "streak_1", name: "Warm Up", description: "Reach 3 day streak", icon: "🔥", flutterIcon: Icons.whatshot, category: "streak", threshold: 3, colorHex: 0xFFF97316),
+    AppBadge(id: "streak_2", name: "Consistent", description: "Reach 7 day streak", icon: "🌋", flutterIcon: Icons.local_fire_department, category: "streak", threshold: 7, colorHex: 0xFFF97316),
+    AppBadge(id: "streak_3", name: "Unstoppable", description: "Reach 30 day streak", icon: "☄️", flutterIcon: Icons.flare, category: "streak", threshold: 30, colorHex: 0xFFF97316),
 
     // --- GOLD ---
-    AppBadge(id: "gold_1", name: "Saver", description: "Kumpulkan 1000 Gold", icon: "💰", flutterIcon: Icons.monetization_on_rounded, category: "gold", threshold: 1000, colorHex: 0xFFFFD700),
-    AppBadge(id: "gold_2", name: "Merchant", description: "Kumpulkan 10000 Gold", icon: "🪙", flutterIcon: Icons.paid, category: "gold", threshold: 10000, colorHex: 0xFFFFD700),
-    AppBadge(id: "gold_3", name: "Billionaire", description: "Kumpulkan 99999 Gold", icon: "💎", flutterIcon: Icons.diamond, category: "gold", threshold: 99999, colorHex: 0xFFFFD700),
+    AppBadge(id: "gold_1", name: "Saver", description: "Collect 1000 Gold", icon: "💰", flutterIcon: Icons.monetization_on_rounded, category: "gold", threshold: 1000, colorHex: 0xFFFFD700),
+    AppBadge(id: "gold_2", name: "Merchant", description: "Collect 10000 Gold", icon: "💼", flutterIcon: Icons.storefront_rounded, category: "gold", threshold: 10000, colorHex: 0xFFFFD700),
+    AppBadge(id: "gold_3", name: "Billionaire", description: "Collect 99999 Gold", icon: "💎", flutterIcon: Icons.diamond, category: "gold", threshold: 99999, colorHex: 0xFFFFD700),
   ];
 }
 

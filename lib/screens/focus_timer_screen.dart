@@ -495,7 +495,7 @@ class _FocusTimerScreenState extends State<FocusTimerScreen>
                           ),
                           child: Center(
                             child: Text(
-                              _isPaused ? '▶  ${l.timerResume}' : '⏸  ${l.timerPause}',
+                              _isPaused ? l.timerResume : l.timerPause,
                               style: GoogleFonts.nunito(
                                 color: _color,
                                 fontWeight: FontWeight.w700,

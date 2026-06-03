@@ -8,18 +8,20 @@ import '../services/notification_service.dart';
 import '../screens/onboarding_screen.dart';
 import 'dart:math';
 
-// Flat Minimalist Colors
-const Color _bgDark = Color(0xFF0F0F1E);
-const Color _cardBg = Color(0xFF1A1A2E);
-const Color _accentPurple = Color(0xFF7C3AED); // Main app purple
-const Color _accentCyan = Color(0xFF7C3AED);
-const Color _textWhite = Color(0xFFFFFFFF);
-const Color _textMuted = Color(0x8AFFFFFF);
+import '../theme/app_theme.dart';
 
-const Color _flatRed = Color(0xFFEF4444);
-const Color _flatAmber = Color(0xFF7C3AED);
-const Color _flatGreen = Color(0xFF7C3AED);
-const Color _flatBlue = Color(0xFF7C3AED);
+// Use AppTheme for colors instead of hardcoded dark colors
+Color get _bgDark => AppColors.background;
+Color get _cardBg => AppColors.cardBackground;
+Color get _accentPurple => AppColors.primary;
+Color get _accentCyan => AppColors.secondary;
+Color get _textWhite => AppColors.textPrimary;
+Color get _textMuted => AppColors.textSecondary;
+
+Color get _flatRed => AppColors.error;
+Color get _flatAmber => AppColors.warning;
+Color get _flatGreen => AppColors.success;
+Color get _flatBlue => AppColors.info;
 
 class DevToolsSheet extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -306,7 +308,8 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
     );
   }
 
-  Widget _buildInputRow(String label, TextEditingController ctrl, {int step = 1, bool showButtons = true, IconData? icon, Color iconColor = _textWhite}) {
+  Widget _buildInputRow(String label, TextEditingController ctrl, {int step = 1, bool showButtons = true, IconData? icon, Color? iconColor}) {
+    final actualIconColor = iconColor ?? _textWhite;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -325,11 +328,11 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
                   },
                   child: Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: _bgDark,
                     ),
-                    child: const Icon(Icons.remove, color: _flatRed, size: 20),
+                    child: Icon(Icons.remove, color: _flatRed, size: 20),
                   ),
                 ),
               if (showButtons) const SizedBox(width: 12),
@@ -343,7 +346,7 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
                   child: Row(
                     children: [
                       if (icon != null) ...[
-                        Icon(icon, color: iconColor, size: 20),
+                        Icon(icon, color: actualIconColor, size: 20),
                         const SizedBox(width: 12),
                       ],
                       Expanded(
@@ -369,11 +372,11 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
                   },
                   child: Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: _bgDark,
                     ),
-                    child: const Icon(Icons.add, color: _flatGreen, size: 20),
+                    child: Icon(Icons.add, color: _flatGreen, size: 20),
                   ),
                 ),
             ],
@@ -426,7 +429,11 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
     );
   }
 
-  void _testNotificationDialog() {
+  void _testNotificationDialog() async {
+    // Minta izin notifikasi terlebih dahulu sebelum memunculkan dialog
+    await NotificationService().requestPermissions();
+    
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -437,7 +444,7 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.notifications, color: _accentCyan),
+              leading: Icon(Icons.notifications, color: _accentCyan),
               title: Text('System Alert', style: GoogleFonts.nunito(color: _textWhite)),
               subtitle: Text('Ini adalah notifikasi test', style: GoogleFonts.nunito(color: _textMuted)),
               onTap: () {
@@ -455,9 +462,9 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.95,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: _bgDark,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Column(
         children: [
@@ -493,7 +500,7 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.person_search, color: _textMuted, size: 20),
+                              Icon(Icons.person_search, color: _textMuted, size: 20),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: TextField(
@@ -543,11 +550,11 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
                         value: _rankName,
                         dropdownColor: _cardBg,
                         isExpanded: true,
-                        icon: const Icon(Icons.keyboard_arrow_down, color: _textMuted),
+                        icon: Icon(Icons.keyboard_arrow_down, color: _textMuted),
                         style: GoogleFonts.nunito(color: _textWhite, fontWeight: FontWeight.bold, fontSize: 16),
                         items: _rankOptions.map((r) => DropdownMenuItem(value: r, child: Row(
                           children: [
-                            const Icon(Icons.military_tech, color: _flatAmber, size: 20),
+                            Icon(Icons.military_tech, color: _flatAmber, size: 20),
                             const SizedBox(width: 12),
                             Text('Rank $r'),
                           ],
@@ -619,9 +626,9 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: _isLoading ? null : () async {
-                      await _updateStats();
-                      if (mounted) Navigator.pop(context);
+                    onPressed: _isLoading ? null : () {
+                      Navigator.pop(context);
+                      _updateStats();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _accentCyan,
@@ -644,7 +651,9 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
                     childAspectRatio: 2.2,
                     children: [
                       _buildQuickBtn('DEMO ONBOARDING', Icons.play_circle_outline, _accentCyan, () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const OnboardingScreen()))),
-                      _buildQuickBtn('DEMO TUTORIAL', Icons.help_outline, _flatAmber, () {}),
+                      _buildQuickBtn('DEMO TUTORIAL', Icons.help_outline, _flatAmber, () {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo Tutorial segera hadir!')));
+                      }),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -657,8 +666,26 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
                     childAspectRatio: 1.2,
                     children: [
                       _buildQuickBtn('TEST NOTIF', Icons.notifications_none, _flatGreen, _testNotificationDialog),
-                      _buildQuickBtn('DEMO BADGE', Icons.emoji_events_outlined, _flatAmber, () {}),
+                      _buildQuickBtn('RESET BADGES', Icons.remove_circle_outline, _flatRed, () async {
+                        if (_targetUid.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Target User kosong! Sync dulu.')));
+                          return;
+                        }
+                        setState(() => _isLoading = true);
+                        try {
+                          await FirebaseFirestore.instance.collection('users').doc(_targetUid).update({
+                            UserSchema.claimedBadges: [],
+                            UserSchema.equippedBadges: [],
+                          });
+                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Semua Badge berhasil di-reset!')));
+                        } catch (e) {
+                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                        } finally {
+                          if (mounted) setState(() => _isLoading = false);
+                        }
+                      }),
                       _buildQuickBtn('MAX STATS', Icons.diamond_outlined, _accentPurple, () async {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Menerapkan MAX STATS...')));
                         setState(() {
                           _levelCtrl.text = '150';
                           _goldCtrl.text = '999999';
@@ -671,9 +698,9 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
                           _defCtrl.text = '99999';
                           _syncRankFromLevel(150);
                         });
-                        await _updateStats();
-                        await _updateKualifikasi();
-                        if (mounted) Navigator.pop(context);
+                        Navigator.pop(context);
+                        _updateStats();
+                        _updateKualifikasi();
                       }),
                     ],
                   ),
@@ -688,7 +715,7 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
                       controller: _questNameCtrl,
                       style: GoogleFonts.nunito(color: _textWhite, fontSize: 16, fontWeight: FontWeight.bold),
                       decoration: InputDecoration(
-                        icon: const Icon(Icons.edit, color: _textMuted, size: 20),
+                        icon: Icon(Icons.edit, color: _textMuted, size: 20),
                         hintText: 'Nama Quest',
                         hintStyle: GoogleFonts.nunito(color: _textMuted, fontSize: 14),
                         border: InputBorder.none,
@@ -747,7 +774,7 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.military_tech, color: _accentPurple, size: 36),
+                        Icon(Icons.military_tech, color: _accentPurple, size: 36),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
@@ -773,10 +800,10 @@ class _DevToolsSheetState extends State<DevToolsSheet> {
                   
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: _isLoading ? null : () async {
-                      await _updateStats();
-                      await _updateKualifikasi();
-                      if (mounted) Navigator.pop(context);
+                    onPressed: _isLoading ? null : () {
+                      Navigator.pop(context);
+                      _updateStats();
+                      _updateKualifikasi();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _accentCyan,

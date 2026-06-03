@@ -53,7 +53,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   Future<void> _register() async {
-    final l = context.lw;
+    final l = context.l;
     final username = _usernameCtrl.text.trim();
     final email = _emailCtrl.text.trim();
     final password = _passCtrl.text.trim();

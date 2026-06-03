@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/locale_service.dart';
 
 // ═══════════════════════════════════════════════════════════
 //  THEME TYPE ENUM
@@ -198,48 +199,48 @@ class AppColors {
   // ─── Anime Theme ─────────────────────────────────────────
   static void _setAnime() {
     background = const Color(0xFFFFF0F5); // Lavender Blush pastel
-    cardBackground = Colors.white;
-    surface = Colors.white;
-    cardBorder = const Color(0xFFFFD1DC); // Pastel pink border
-    borderWidth = 1.5; // Slightly thicker for cartoon feel
+    cardBackground = const Color(0xFFFFFAFA); // Snow white with pink tint
+    surface = const Color(0xFFFFFAFA);
+    cardBorder = const Color(0xFFFFB6C1); // Light Pink
+    borderWidth = 2.0; // Slightly thicker for cartoon feel
 
-    primary = const Color(0xFFFFB7B2); // Pastel Red/Pink
-    primaryLight = const Color(0xFFFFDAC1); // Pastel Orange
-    primaryDark = const Color(0xFFE2F0CB); // Pastel Green
-    secondary = const Color(0xFFB5EAD7); // Pastel Teal
-    accent = const Color(0xFFC7CEEA); // Pastel Purple
+    primary = const Color(0xFFFF69B4); // Hot Pink
+    primaryLight = const Color(0xFFFFB6C1); // Light Pink
+    primaryDark = const Color(0xFFC71585); // Medium Violet Red
+    secondary = const Color(0xFF9370DB); // Medium Purple
+    accent = const Color(0xFF00CED1); // Dark Turquoise
 
-    textPrimary = const Color(0xFF2D2D2D);
-    textOnPrimary = const Color(0xFF2D2D2D);
-    textSecondary = const Color(0xFF555555);
-    textHint = const Color(0xFF888888);
-    textDisabled = const Color(0xFFE0E0E0);
+    textPrimary = const Color(0xFF4A148C); // Deep Purple text for contrast
+    textOnPrimary = Colors.white; // Text on Hot Pink should be white
+    textSecondary = const Color(0xFF7B1FA2);
+    textHint = const Color(0xFFBA68C8);
+    textDisabled = const Color(0xFFE1BEE7);
 
-    success = const Color(0xFFB5EAD7); 
-    error = const Color(0xFFFFB7B2); 
-    warning = const Color(0xFFFFDAC1); 
-    info = const Color(0xFFC7CEEA); 
+    success = const Color(0xFF69F0AE); // Pastel Green
+    error = const Color(0xFFFF5252); // Pastel Red
+    warning = const Color(0xFFFFD740); // Pastel Yellow
+    info = const Color(0xFF40C4FF); // Pastel Blue
 
-    strength = const Color(0xFFFFB7B2);
-    agility = const Color(0xFFE2F0CB);
-    intelligence = const Color(0xFFC7CEEA);
-    defense = const Color(0xFFFFDAC1);
-    vitality = const Color(0xFFB5EAD7);
+    strength = const Color(0xFFFF4081); // Pink
+    agility = const Color(0xFF00E676); // Green
+    intelligence = const Color(0xFF448AFF); // Blue
+    defense = const Color(0xFFFF9100); // Orange
+    vitality = const Color(0xFFE040FB); // Purple
 
-    gold = const Color(0xFFFFE4B5);
-    xp = const Color(0xFFE2F0CB);
-    hp = const Color(0xFFFFB7B2);
-    level = const Color(0xFFFFE4B5);
+    gold = const Color(0xFFFFD700);
+    xp = const Color(0xFFFF4081);
+    hp = const Color(0xFFFF1744);
+    level = const Color(0xFFFF9100);
 
     primaryGradient = [
-      const Color(0xFFFFB7B2),
-      const Color(0xFFC7CEEA),
+      const Color(0xFFFF69B4), // Hot Pink
+      const Color(0xFFDA70D6), // Orchid
     ];
 
     backgroundGradient = [
       const Color(0xFFFFF0F5),
-      const Color(0xFFFFD1DC),
-      const Color(0xFFFFDAC1),
+      const Color(0xFFFFE4E1),
+      const Color(0xFFFFC0CB),
     ];
   }
 
@@ -428,23 +429,27 @@ class AppTheme {
   static const Map<AppThemeType, Map<String, String>> themeInfo = {
     AppThemeType.darkMode: {
       'name': 'Dark',
-      'emoji': '🌙',
-      'description': 'Elegant dark theme with purple accents',
+      'emoji': '🌑',
+      'desc_en': 'Elegant dark theme with purple accents',
+      'desc_id': 'Tema gelap elegan dengan aksen ungu',
     },
     AppThemeType.lightMode: {
       'name': 'Light',
-      'emoji': '☀️',
-      'description': 'Clean and bright for daytime focus',
+      'emoji': '🌤️',
+      'desc_en': 'Clean and bright for daytime focus',
+      'desc_id': 'Bersih dan cerah untuk fokus di siang hari',
     },
     AppThemeType.anime: {
-      'name': 'Anime',
-      'emoji': '�',
-      'description': 'Soft pastel colors with kawaii aesthetics',
+      'name': 'Pinky',
+      'emoji': '🌸',
+      'desc_en': 'Soft pastel colors with kawaii aesthetics',
+      'desc_id': 'Warna pastel lembut dengan estetika kawaii',
     },
     AppThemeType.comicMonochrome: {
       'name': 'Comic',
-      'emoji': '📖',
-      'description': 'Bold black & white manga inspired',
+      'emoji': '📓',
+      'desc_en': 'Bold black & white manga inspired',
+      'desc_id': 'Gaya hitam & putih tebal ala manga',
     },
   };
 
@@ -459,8 +464,9 @@ class AppTheme {
   }
 
   // ─── Get Theme Description ───────────────────────────────
-  static String getDescription(AppThemeType theme) {
-    return themeInfo[theme]?['description'] ?? '';
+  static String getDescription(AppThemeType theme, BuildContext context) {
+    final isEn = context.l.isEn;
+    return themeInfo[theme]?[isEn ? 'desc_en' : 'desc_id'] ?? '';
   }
 
   // ─── Get All Themes ──────────────────────────────────────

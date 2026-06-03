@@ -38,15 +38,25 @@ class _TaskScreenState extends State<TaskScreen> with TickerProviderStateMixin {
 
   // ── Fungsi Aksi ──────────────────────────────────────────────────
   // Mengubah status misi dari belum selesai menjadi selesai (atau sebaliknya)
-  Future<void> _toggleDone(String taskId, bool current) async {
+  Future<void> _toggleDone(String taskId, bool current, int diff, String title) async {
     if (_uid == null) return;
     HapticFeedback.lightImpact();
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(_uid)
-        .collection('tasks')
-        .doc(taskId)
-        .update({'done': !current});
+    
+    final result = await context.read<TaskViewModel>().toggleDone(taskId, current, diff);
+    
+    if (result != null && mounted) {
+      final homeVm = context.read<HomeViewModel>();
+      CelebrationOverlay.show(
+        context,
+        title: title,
+        category: widget.category,
+        xp: result['xp'] ?? 0,
+        coin: result['coin'] ?? 0,
+        userName: homeVm.userName,
+        level: homeVm.level,
+        equippedItems: homeVm.equippedItems,
+      );
+    }
   }
 
   // Menghapus misi dari database secara permanen
@@ -381,7 +391,7 @@ class _TaskScreenState extends State<TaskScreen> with TickerProviderStateMixin {
 class _TaskCard extends StatefulWidget {
   final QueryDocumentSnapshot doc;
   final Color color;
-  final Future<void> Function(String, bool) onToggle;
+  final Future<void> Function(String, bool, int, String) onToggle;
   final Future<void> Function(String) onDelete;
   final int Function(dynamic) parseDiff;
   final Color Function(int) diffColor;
@@ -405,6 +415,7 @@ class _TaskCard extends StatefulWidget {
 
 class _TaskCardState extends State<_TaskCard>
     with SingleTickerProviderStateMixin {
+  bool _isLoading = false;
   late AnimationController _ctrl;
   late Animation<double> _scale;
 
@@ -532,7 +543,15 @@ class _TaskCardState extends State<_TaskCard>
                 ),
                 SizedBox(width: 12),
                 GestureDetector(
-                  onTap: () => widget.onToggle(taskId, done),
+                  onTap: () async {
+                    if (_isLoading) return;
+                    setState(() => _isLoading = true);
+                    try {
+                      await widget.onToggle(taskId, done, diff, title);
+                    } finally {
+                      if (mounted) setState(() => _isLoading = false);
+                    }
+                  },
                   child: AnimatedContainer(
                     duration: Duration(milliseconds: 200),
                     width: 26,

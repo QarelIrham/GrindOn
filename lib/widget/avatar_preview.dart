@@ -164,11 +164,11 @@ class AvatarPreview extends StatelessWidget {
       // clipBehavior antiAlias memastikan gambar yang melewati batas kotak bundar dipotong dengan rapi
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        // Jika tidak ada background wallpaper, gunakan warna kotak abu-abu gelap
-        color: showBackground && bgPath.isEmpty ? Color(0xFF1E1E2E) : Colors.transparent,
+        // Jika tidak ada background wallpaper, sesuaikan dengan tema aktif
+        color: showBackground && bgPath.isEmpty ? AppColors.textPrimary.withValues(alpha: 0.05) : Colors.transparent,
         borderRadius: BorderRadius.circular(size * 0.15),
         border: showBackground
-            ? Border.all(color: AppColors.textPrimary.withValues(alpha: 0.10), width: AppColors.borderWidth)
+            ? Border.all(color: AppColors.cardBorder, width: AppColors.borderWidth)
             : null,
       ),
       // --- INI RAHASIANYA (STACK Z-INDEX) ---

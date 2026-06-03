@@ -216,7 +216,7 @@ class _ProofScreenState extends State<ProofScreen> {
       });
 
       // 8. Tampilkan Layar Perayaan Selesai!
-      CelebrationOverlay.show(
+      await CelebrationOverlay.show(
         context,
         title: widget.title,
         category: widget.category,
@@ -226,9 +226,12 @@ class _ProofScreenState extends State<ProofScreen> {
         level: _level,
         equippedItems: _equippedItems,
       );
+      
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
     } catch (e) {
       _showSnack(context.l.proofSaveFailed('$e'));
-    } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }

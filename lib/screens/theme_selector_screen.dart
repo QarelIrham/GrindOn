@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../services/theme_service.dart';
 import '../services/audio_service.dart';
+import '../services/locale_service.dart';
 
 // ── Layar Pemilih Tema (Theme Selector Screen) ────────────────────
 // Memungkinkan pengguna untuk mengganti tema keseluruhan aplikasi.
@@ -18,7 +19,7 @@ class ThemeSelectorScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Choose Theme',
+          context.l.themeTitle,
           style: GoogleFonts.nunito(fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
@@ -34,7 +35,7 @@ class ThemeSelectorScreen extends StatelessWidget {
         children: [
           // Header
           Text(
-            '🎨 Customize Your Adventure',
+            context.l.themeSubtitle,
             style: GoogleFonts.nunito(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -44,7 +45,7 @@ class ThemeSelectorScreen extends StatelessWidget {
           ),
           SizedBox(height: 8),
           Text(
-            'Choose a theme that matches your style',
+            context.l.themeDesc,
             style: GoogleFonts.nunito(
               fontSize: 14,
               color: AppColors.textSecondary,
@@ -87,7 +88,7 @@ class ThemeSelectorScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 12),
                 Text(
-                  'Theme Tip',
+                  context.l.themeTipTitle,
                   style: GoogleFonts.nunito(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -96,7 +97,7 @@ class ThemeSelectorScreen extends StatelessWidget {
                 ),
                 SizedBox(height: 8),
                 Text(
-                  'Your theme preference is saved automatically and will be applied across the entire app!',
+                  context.l.themeTipDesc,
                   style: GoogleFonts.nunito(
                     fontSize: 13,
                     color: AppColors.textSecondary,
@@ -193,7 +194,7 @@ class _ThemeCard extends StatelessWidget {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      AppTheme.getDescription(themeType),
+                      AppTheme.getDescription(themeType, context),
                       style: GoogleFonts.nunito(
                         fontSize: 13,
                         color: AppColors.textSecondary,

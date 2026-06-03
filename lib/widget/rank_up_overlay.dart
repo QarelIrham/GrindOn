@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/app_schema.dart';
 import '../services/audio_service.dart';
 import '../theme/app_theme.dart';
+import '../services/locale_service.dart';
 
 class RankUpOverlay extends StatefulWidget {
   final String newRank;
@@ -43,6 +44,7 @@ class _RankUpOverlayState extends State<RankUpOverlay> {
     final rankColor = Color(RankSystem.rankColorHex(widget.newRank));
 
     return Dialog(
+      elevation: 0,
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: Stack(
@@ -58,7 +60,7 @@ class _RankUpOverlayState extends State<RankUpOverlay> {
               border: Border.all(color: rankColor, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: rankColor.withOpacity(0.3),
+                  color: rankColor.withValues(alpha: 0.3),
                   blurRadius: 40,
                   spreadRadius: 10,
                 ),
@@ -69,7 +71,7 @@ class _RankUpOverlayState extends State<RankUpOverlay> {
               children: [
                 const SizedBox(height: 40),
                 Text(
-                  'RANK UP!',
+                  context.l.notifRankUpTitle,
                   style: GoogleFonts.nunito(
                     color: AppColors.textPrimary,
                     fontSize: 32,
@@ -85,7 +87,7 @@ class _RankUpOverlayState extends State<RankUpOverlay> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'You have reached Rank ${widget.newRank}',
+                  context.l.notifRankUpBody(widget.newRank),
                   style: GoogleFonts.nunito(
                     color: AppColors.textSecondary,
                     fontSize: 16,
@@ -113,7 +115,7 @@ class _RankUpOverlayState extends State<RankUpOverlay> {
                     ),
                   ),
                   child: Text(
-                    'AWESOME',
+                    context.l.notifAwesome,
                     style: GoogleFonts.nunito(
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
@@ -136,7 +138,7 @@ class _RankUpOverlayState extends State<RankUpOverlay> {
                 border: Border.all(color: rankColor, width: 4),
                 boxShadow: [
                   BoxShadow(
-                    color: rankColor.withOpacity(0.5),
+                    color: rankColor.withValues(alpha: 0.5),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),

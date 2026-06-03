@@ -17,6 +17,7 @@ import 'history_screen.dart';
 import '../theme/rpg_theme.dart';
 import '../theme/app_theme.dart';
 import '../widget/theme_card.dart';
+import '../widget/performance_chart.dart';
 
 class StatisticScreen extends StatefulWidget {
   const StatisticScreen({super.key});
@@ -145,7 +146,11 @@ class _StatisticScreenState extends State<StatisticScreen>
   }
 
   Color _rankColor(String rank) {
-    return Color(RankSystem.rankColorHex(rank));
+    Color color = Color(RankSystem.rankColorHex(rank));
+    if ((AppColors.currentTheme == AppThemeType.lightMode || AppColors.currentTheme == AppThemeType.anime) && color == const Color(0xFFFFFFFF)) {
+      return AppColors.primary; // Use primary color for SSR in light/anime mode instead of white
+    }
+    return color;
   }
 
   int get _xpForThisLevel => RankSystem.xpForLevel(_level);
@@ -297,6 +302,8 @@ class _StatisticScreenState extends State<StatisticScreen>
           const SizedBox(height: 14),
           _buildStreakRow(),
           const SizedBox(height: 14),
+          PerformanceChart(uid: uid),
+          const SizedBox(height: 14),
           _buildAttributeBars(),
           const SizedBox(height: 14),
           _buildDynamicTitle(),
@@ -379,37 +386,82 @@ class _StatisticScreenState extends State<StatisticScreen>
 
     final bool isComic = AppColors.currentTheme == AppThemeType.comicMonochrome;
 
-    if (pos == 1) {
-      posColor = isComic ? Colors.black : AppColors.gold;
-      rowGradient = isComic ? [Colors.black.withValues(alpha: 0.15), cardDark] : [AppColors.gold.withValues(alpha: 0.1), cardDark];
-      borderColor = isComic ? AppColors.cardBorder : AppColors.gold.withValues(alpha: 0.3);
-      borderWidth = AppColors.borderWidth > 1.0 ? AppColors.borderWidth : 1.5;
-    } else if (pos == 2) {
-      posColor = isComic ? Colors.black87 : const Color(0xFFC0C0C0);
-      rowGradient = isComic ? [Colors.black.withValues(alpha: 0.10), cardDark] : [const Color(0xFFC0C0C0).withValues(alpha: 0.08), cardDark];
-      borderColor = isComic ? AppColors.cardBorder : const Color(0xFFC0C0C0).withValues(alpha: 0.2);
-    } else if (pos == 3) {
-      posColor = isComic ? Colors.black54 : const Color(0xFFCD7F32);
-      rowGradient = isComic ? [Colors.black.withValues(alpha: 0.05), cardDark] : [const Color(0xFFCD7F32).withValues(alpha: 0.05), cardDark];
-      borderColor = isComic ? AppColors.cardBorder : const Color(0xFFCD7F32).withValues(alpha: 0.15);
+    Color textColor = AppColors.textPrimary;
+    Color subtitleColor = AppColors.textPrimary.withValues(alpha: 0.38);
+
+    if (isComic) {
+      if (pos == 1) {
+        posColor = Colors.white;
+        rowGradient = [Colors.black, Colors.black];
+        borderColor = Colors.black;
+        borderWidth = 2.0;
+        textColor = Colors.white;
+        subtitleColor = Colors.white70;
+      } else if (pos == 2) {
+        posColor = Colors.white;
+        rowGradient = [const Color(0xFF424242), const Color(0xFF424242)]; // Hitam pudar
+        borderColor = Colors.black;
+        borderWidth = 1.5;
+        textColor = Colors.white;
+        subtitleColor = Colors.white70;
+      } else if (pos == 3) {
+        posColor = Colors.black;
+        rowGradient = [const Color(0xFF9E9E9E), const Color(0xFF9E9E9E)]; // Putih gelap / Abu
+        borderColor = Colors.black;
+        borderWidth = 1.5;
+        textColor = Colors.black;
+        subtitleColor = Colors.black54;
+      } else if (pos == 4) {
+        posColor = Colors.black;
+        rowGradient = [const Color(0xFFE0E0E0), const Color(0xFFE0E0E0)]; // Abu muda
+        borderColor = Colors.black;
+        textColor = Colors.black;
+        subtitleColor = Colors.black54;
+      } else if (pos == 5) {
+        posColor = Colors.black;
+        rowGradient = [const Color(0xFFF5F5F5), const Color(0xFFF5F5F5)]; // Abu sangat muda
+        borderColor = Colors.black;
+        textColor = Colors.black;
+        subtitleColor = Colors.black54;
+      } else {
+        posColor = Colors.black;
+        rowGradient = [Colors.white, Colors.white]; // Sisanya putih
+        borderColor = Colors.black;
+        textColor = Colors.black;
+        subtitleColor = Colors.black54;
+      }
+    } else {
+      if (pos == 1) {
+        posColor = AppColors.gold;
+        rowGradient = [AppColors.gold.withValues(alpha: 0.1), cardDark];
+        borderColor = AppColors.gold.withValues(alpha: 0.3);
+        borderWidth = AppColors.borderWidth > 1.0 ? AppColors.borderWidth : 1.5;
+      } else if (pos == 2) {
+        posColor = const Color(0xFFC0C0C0);
+        rowGradient = [const Color(0xFFC0C0C0).withValues(alpha: 0.08), cardDark];
+        borderColor = const Color(0xFFC0C0C0).withValues(alpha: 0.2);
+      } else if (pos == 3) {
+        posColor = const Color(0xFFCD7F32);
+        rowGradient = [const Color(0xFFCD7F32).withValues(alpha: 0.05), cardDark];
+        borderColor = const Color(0xFFCD7F32).withValues(alpha: 0.15);
+      }
     }
 
     if (isMe) {
-      borderColor = AppColors.currentTheme == AppThemeType.comicMonochrome ? AppColors.cardBorder : AppColors.primary.withValues(alpha: 0.6);
+      borderColor = isComic ? Colors.black : AppColors.primary.withValues(alpha: 0.6);
       borderWidth = AppColors.borderWidth > 1.0 ? AppColors.borderWidth + 1.0 : 2.0;
     }
 
-    return Container(
+    return ThemeCard(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: rowGradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor, width: borderWidth),
-        boxShadow: pos <= 3 ? [
-          BoxShadow(color: posColor.withValues(alpha: 0.05), blurRadius: 10, spreadRadius: 1)
-        ] : null,
-      ),
+      gradient: LinearGradient(colors: rowGradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
+      borderRadius: BorderRadius.circular(20),
+      borderColor: borderColor,
+      borderWidth: borderWidth,
+      boxShadow: pos <= 3 ? [
+        BoxShadow(color: posColor.withValues(alpha: 0.05), blurRadius: 10, spreadRadius: 1)
+      ] : null,
       child: Row(
         children: [
           // Position
@@ -451,14 +503,14 @@ class _StatisticScreenState extends State<StatisticScreen>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.nunito(
-                    color: AppColors.textPrimary,
+                    color: textColor,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
                 ),
                 Text(
                   '@$username',
-                  style: GoogleFonts.nunito(color: AppColors.textPrimary.withValues(alpha: 0.38), fontSize: 11),
+                  style: GoogleFonts.nunito(color: subtitleColor, fontSize: 11),
                 ),
               ],
             ),
@@ -487,7 +539,7 @@ class _StatisticScreenState extends State<StatisticScreen>
               Text(
                 'Lv.$level',
                 style: GoogleFonts.nunito(
-                  color: AppColors.textSecondary,
+                  color: textColor,
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                 ),
@@ -519,28 +571,27 @@ class _StatisticScreenState extends State<StatisticScreen>
   }
 
   Widget _buildHistoryButton() {
-    return InkWell(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => HistoryScreen()),
-      ),
+    return ThemeCard(
       borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: Offset(0, 4),
-            ),
-          ],
+      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+      borderColor: AppColors.primary.withValues(alpha: 0.3),
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.primary.withValues(alpha: 0.05),
+          blurRadius: 10,
+          offset: Offset(0, 4),
         ),
-        child: Row(
-          children: [
+      ],
+      child: InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => HistoryScreen()),
+        ),
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          child: Row(
+            children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -555,7 +606,7 @@ class _StatisticScreenState extends State<StatisticScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Log Riwayat Task',
+                    context.l.statsLogHistory,
                     style: GoogleFonts.nunito(
                       color: AppColors.textPrimary,
                       fontSize: 15,
@@ -563,7 +614,7 @@ class _StatisticScreenState extends State<StatisticScreen>
                     ),
                   ),
                   Text(
-                    'Lihat semua pencapaian Anda',
+                    context.l.statsViewAchievements,
                     style: GoogleFonts.nunito(
                       color: AppColors.textPrimary.withValues(alpha: 0.54),
                       fontSize: 12,
@@ -574,6 +625,7 @@ class _StatisticScreenState extends State<StatisticScreen>
             ),
             Icon(Icons.chevron_right_rounded, color: AppColors.textDisabled, size: 24),
           ],
+        ),
         ),
       ),
     );
@@ -733,7 +785,7 @@ class _StatisticScreenState extends State<StatisticScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Perjalanan Rank', style: GoogleFonts.nunito(
+          Text(context.l.statsRankJourney, style: GoogleFonts.nunito(
             color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w700,
           )),
           const SizedBox(height: 12),
@@ -770,7 +822,7 @@ class _StatisticScreenState extends State<StatisticScreen>
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(isCurrent ? '◀ Kamu' : '',
+                  Text(isCurrent ? context.l.statsKamu : '',
                       style: GoogleFonts.nunito(color: color, fontSize: 8)),
                 ],
               );
@@ -787,11 +839,11 @@ class _StatisticScreenState extends State<StatisticScreen>
       children: [
         Expanded(child: _statCard(Icons.local_fire_department_rounded, '$_streak', 'Streak', AppColors.warning)),
         SizedBox(width: 10),
-        Expanded(child: _statCard(Icons.emoji_events_rounded, '$_longestStreak', 'Terpanjang', AppColors.gold)),
+        Expanded(child: _statCard(Icons.emoji_events_rounded, '$_longestStreak', context.l.statsLongest, AppColors.gold)),
         SizedBox(width: 10),
-        Expanded(child: _statCard(Icons.check_circle_rounded, '$_totalDone', 'Selesai', AppColors.success)),
+        Expanded(child: _statCard(Icons.check_circle_rounded, '$_totalDone', context.l.statsSelesai, AppColors.success)),
         SizedBox(width: 10),
-        Expanded(child: _statCard(Icons.cancel_rounded, '$_totalFailed', 'Gagal', AppColors.error)),
+        Expanded(child: _statCard(Icons.cancel_rounded, '$_totalFailed', context.l.statsGagal, AppColors.error)),
       ],
     );
   }
@@ -834,9 +886,9 @@ class _StatisticScreenState extends State<StatisticScreen>
         .map((e) => e.toDouble())
         .reduce((a, b) => a > b ? a : b);
     
-    // Berikan ruang tambahan 20% di atas max stat agar chart tidak menempel di tepi
-    // Minimal 100 agar chart tidak terlalu besar jika stats masih 0 atau sangat kecil
-    final double maxLimit = (maxStat < 100) ? 100.0 : (maxStat * 1.2);
+    // Biarkan stat tertinggi menyentuh ujung grafik agar terlihat lebih penuh
+    // Minimal 100 agar chart ada bentuknya jika semua stats masih 0
+    final double maxLimit = (maxStat < 100) ? 100.0 : maxStat;
 
     final values = [
       _strengthXp / maxLimit,
@@ -971,7 +1023,7 @@ class _StatisticScreenState extends State<StatisticScreen>
             color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w800,
           )),
           SizedBox(height: 4),
-          Text('Gelar berdasarkan atribut tertinggimu',
+          Text(context.l.statsTitleBasedOn,
               style: GoogleFonts.nunito(color: AppColors.textPrimary.withValues(alpha: 0.38), fontSize: 11)),
         ],
       ),
@@ -979,21 +1031,27 @@ class _StatisticScreenState extends State<StatisticScreen>
   }
 
   Widget _buildShareButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: _shareProfileAsImage,
-        icon: Icon(Icons.share_rounded, color: AppColors.textOnPrimary, size: 18),
-        label: Text(
-          'Share Karakter & Statistik',
-          style: GoogleFonts.nunito(color: AppColors.textOnPrimary, fontWeight: FontWeight.w800),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+    return ThemeCard(
+      margin: const EdgeInsets.only(top: 16),
+      borderRadius: BorderRadius.circular(16),
+      borderColor: AppColors.primary,
+      backgroundColor: AppColors.primary,
+      child: InkWell(
+        onTap: _shareProfileAsImage,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 8,
-          shadowColor: AppColors.primary.withValues(alpha: 0.5),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.share_rounded, color: AppColors.textOnPrimary, size: 18),
+              SizedBox(width: 8),
+              Text(
+                context.l.statsShare,
+                style: GoogleFonts.nunito(color: AppColors.textOnPrimary, fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1003,7 +1061,7 @@ class _StatisticScreenState extends State<StatisticScreen>
     try {
       // Show loading
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Menyiapkan gambar kartu karakter...'), duration: Duration(seconds: 1)),
+        SnackBar(content: Text(context.l.statsPrepareImage), duration: Duration(seconds: 1)),
       );
 
       final image = await _screenshotController.capture();
@@ -1048,7 +1106,7 @@ class _StatisticScreenState extends State<StatisticScreen>
     final double maxStat = [str, intl, agi, vit, def]
         .map((e) => e.toDouble())
         .reduce((a, b) => a > b ? a : b);
-    final double maxLimit = (maxStat < 100) ? 100.0 : (maxStat * 1.2);
+    final double maxLimit = (maxStat < 100) ? 100.0 : maxStat;
 
     final values = <double>[
       str / maxLimit,
@@ -1066,7 +1124,7 @@ class _StatisticScreenState extends State<StatisticScreen>
           width: 340,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: const Color(0xFF1B1B27), // Warna navy dark
+            color: cardDark, // Changed to match theme
             borderRadius: BorderRadius.circular(30),
             border: Border.all(color: rankColor.withValues(alpha: 0.3), width: 1.5),
             boxShadow: [
@@ -1112,7 +1170,7 @@ class _StatisticScreenState extends State<StatisticScreen>
                     child: Text('Rank $rank', style: GoogleFonts.nunito(color: rankColor, fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
                   const SizedBox(width: 12),
-                  Text('Lv.$level', style: GoogleFonts.nunito(color: AppColors.textOnPrimary, fontWeight: FontWeight.w900, fontSize: 16)),
+                  Text('Lv.$level', style: GoogleFonts.nunito(color: AppColors.textPrimary, fontWeight: FontWeight.w900, fontSize: 16)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -1185,7 +1243,16 @@ class _StatisticScreenState extends State<StatisticScreen>
   }
 
   Widget _buildEquippedBadgesRow(List<String> badgeIds) {
-    if (badgeIds.isEmpty) return const SizedBox.shrink();
+    if (badgeIds.isEmpty) {
+      return Text(
+        context.l.statsNoBadge,
+        style: GoogleFonts.nunito(
+          color: AppColors.textPrimary.withValues(alpha: 0.38),
+          fontSize: 12,
+          fontStyle: FontStyle.italic,
+        ),
+      );
+    }
 
     final badges = badgeIds.map((id) {
       try {
@@ -1195,7 +1262,9 @@ class _StatisticScreenState extends State<StatisticScreen>
       }
     }).where((b) => b != null).cast<AppBadge>().toList();
 
-    if (badges.isEmpty) return const SizedBox.shrink();
+    if (badges.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,

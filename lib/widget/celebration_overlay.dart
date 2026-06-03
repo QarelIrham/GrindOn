@@ -30,7 +30,7 @@ class CelebrationOverlay extends StatefulWidget {
     required this.equippedItems,
   });
 
-  static void show(
+  static Future<void> show(
     BuildContext context, {
     required String title,
     required String category,
@@ -40,7 +40,7 @@ class CelebrationOverlay extends StatefulWidget {
     required int level,
     required Map<String, String> equippedItems,
   }) {
-    showDialog(
+    return showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => CelebrationOverlay(
@@ -97,11 +97,12 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    const Color(0xFF1E1E24), // Dark sleek
-                    Color.lerp(const Color(0xFF1E1E24), baseColor, 0.15)!, // Hint of category color
+                    AppColors.cardBackground,
+                    Color.lerp(AppColors.cardBackground, baseColor, 0.15)!,
                   ],
                 ),
                 border: Border.all(
+
                   color: baseColor.withValues(alpha: 0.5),
                   width: 1.5,
                 ),
@@ -173,7 +174,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> {
                           child: Center(
                             child: Icon(
                               Icons.workspace_premium_rounded,
-                              color: Colors.white,
+                              color: AppColors.textPrimary,
                               size: 44,
                             ),
                           ),
@@ -185,7 +186,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> {
                           widget.title,
                           textAlign: TextAlign.center,
                           style: GoogleFonts.outfit(
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             fontSize: 26,
                             fontWeight: FontWeight.w900,
                             height: 1.2,
@@ -210,7 +211,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             _buildStatItem('XP GAINED', '+${widget.xp}', const Color(0xFFF59E0B)),
-                            Container(width: 1, height: 40, color: Colors.white.withValues(alpha: 0.1)),
+                            Container(width: 1, height: 40, color: AppColors.textPrimary.withValues(alpha: 0.1)),
                             _buildStatItem('GOLD', '+${widget.coin}', const Color(0xFFFFD700)),
                           ],
                         ),
@@ -220,9 +221,9 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.25),
+                            color: AppColors.textPrimary.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                            border: Border.all(color: AppColors.textPrimary.withValues(alpha: 0.1)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -246,7 +247,7 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> {
                                   Text(
                                     widget.userName.toUpperCase(),
                                     style: GoogleFonts.outfit(
-                                      color: Colors.white,
+                                      color: AppColors.textPrimary,
                                       fontSize: 16,
                                       fontWeight: FontWeight.w900,
                                       letterSpacing: 1.2,
@@ -288,10 +289,10 @@ class _CelebrationOverlayState extends State<CelebrationOverlay> {
             children: [
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
+                  onPressed: () => Navigator.of(context).pop(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.textPrimary.withValues(alpha: 0.10),
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.textPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
