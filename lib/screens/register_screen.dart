@@ -85,7 +85,9 @@ class _RegisterScreenState extends State<RegisterScreen>
     if (error != null) {
       setState(() { _errorMsg = error; _isLoading = false; });
     } else {
-      // Navigate to character creation instead of home
+      // Firebase otomatis login user setelah register.
+      // Langsung arahkan ke pembuatan karakter.
+      if (!mounted) return;
       Navigator.pushReplacement(context, MaterialPageRoute(
         builder: (_) => const CharacterCreationScreen()));
     }

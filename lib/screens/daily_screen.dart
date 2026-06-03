@@ -172,7 +172,7 @@ class _DailyScreenState extends State<DailyScreen> {
 
   Color _rankColor(String rank) {
     Color color = Color(RankSystem.rankColorHex(rank));
-    if ((AppColors.currentTheme == AppThemeType.lightMode || AppColors.currentTheme == AppThemeType.anime) && color == const Color(0xFFFFFFFF)) {
+    if ((AppColors.currentTheme == AppThemeType.lightMode || AppColors.currentTheme == AppThemeType.anime || AppColors.currentTheme == AppThemeType.comicMonochrome) && color == const Color(0xFFFFFFFF)) {
       return AppColors.primary;
     }
     return color;

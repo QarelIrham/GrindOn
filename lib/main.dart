@@ -70,48 +70,65 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false, // Menghilangkan tulisan "DEBUG" di pojok kanan atas
       title: 'GrindOn',
       theme: themeService.themeData,     // Mengaplikasikan tema ke seluruh elemen aplikasi
-      home: const _AppGate(),            // Masuk ke Gerbang Pengecekan
+      home: const AppGate(),            // Masuk ke Gerbang Pengecekan
     );
   }
 }
 
 // --- GERBANG PENGECEKAN SESI (ROUTER) ---
-/// Fungsi ini menentukan apakah user harus pergi ke halaman Login atau langsung ke Home.
-class _AppGate extends StatefulWidget {
-  const _AppGate();
+/// Mengecek onboarding_seen terlebih dahulu.
+/// Jika belum pernah lihat onboarding → OnboardingScreen.
+/// Jika sudah → cek status login.
+class AppGate extends StatefulWidget {
+  const AppGate({super.key});
   @override
-  State<_AppGate> createState() => _AppGateState();
+  State<AppGate> createState() => _AppGateState();
 }
 
-class _AppGateState extends State<_AppGate> {
+class _AppGateState extends State<AppGate> {
+  bool? _onboardingSeen;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOnboarding();
+  }
+
+  Future<void> _checkOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() => _onboardingSeen = prefs.getBool('onboarding_seen') ?? false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    // StreamBuilder berfungsi sebagai 'Soket Pantau' yang terus mendengarkan status Login
+    // Selama cek SharedPreferences belum selesai, tampilkan splash
+    if (_onboardingSeen == null) return const _SplashLoading();
+
+    // Jika user BELUM PERNAH melihat onboarding, tampilkan dulu
+    if (_onboardingSeen == false) return const OnboardingScreen();
+
+    // Jika sudah pernah lihat onboarding, cek status login
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, authSnap) {
-        // Jika aplikasi masih loading mengecek internet, tampilkan layar loading ungu
         if (authSnap.connectionState == ConnectionState.waiting) {
           return const _SplashLoading();
         }
-
-        // Jika user SUDAH LOGIN (token token auth ditemukan di memori HP)
         if (authSnap.hasData && authSnap.data != null) {
-          // Lanjutkan cek apakah user sudah selesai membuat karakternya
           return _CharacterGate(uid: authSnap.data!.uid);
         }
-
-        // Jika user BELUM LOGIN, arahkan ke layar LoginScreen
         return const LoginScreen();
       },
     );
   }
 }
 
-// --- GERBANG PENGECEKAN KARAKTER (ONBOARDING & CHARACTER CREATION) ---
-/// Mengecek apakah user yang sudah login itu pengguna baru atau pengguna lama
+// --- GERBANG PENGECEKAN KARAKTER ---
+/// Mengecek apakah user yang sudah login sudah membuat karakter atau belum.
+/// Onboarding sudah dihandle di AppGate, jadi di sini hanya cek onboardingDone.
 class _CharacterGate extends StatefulWidget {
-  final String uid; // Menyimpan ID Firebase milik user
+  final String uid;
   const _CharacterGate({required this.uid});
 
   @override
@@ -119,45 +136,23 @@ class _CharacterGate extends StatefulWidget {
 }
 
 class _CharacterGateState extends State<_CharacterGate> {
-  bool? _seen; // Mengecek apakah user sudah pernah lihat Onboarding (Slider pengenalan)
-
-  @override
-  void initState() {
-    super.initState();
-    _check(); // Jalan pertama kali
-  }
-
-  // Fungsi mengecek ke memori HP (SharedPreferences)
-  Future<void> _check() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() => _seen = prefs.getBool('onboarding_seen') ?? false);
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Selama status baca memori belum selesai (null), tahan di layar loading
-    if (_seen == null) return const _SplashLoading();
-
-    // Bertanya ke database Firestore: "Apakah user ini dokumennya sudah lengkap?"
+    // Bertanya ke database Firestore: apakah user sudah selesai membuat karakter?
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance.collection('users').doc(widget.uid).get(),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return const _SplashLoading();
         }
-        
+
         final data = snap.data?.data() as Map<String, dynamic>?;
-        // Memeriksa status (onboardingDone) yang diset saat user bikin karakter
         final done = data?[UserSchema.onboardingDone] ?? false;
-        
-        // KONDISI 1: Jika sudah pernah bikin karakter (user lama) -> Langsung Masuk Halaman Utama (Home)
+
+        // Sudah bikin karakter → Halaman Utama
         if (done == true) return const HomeScreen();
 
-        // KONDISI 2: Jika karakter BELUM dibuat, DAN dia BELUM pernah lihat animasi slider
-        if (_seen == false) return const OnboardingScreen();
-        
-        // KONDISI 3: Jika karakter BELUM dibuat, TAPI dia SUDAH pernah lihat animasi slider
+        // Belum bikin karakter → Layar Pembuatan Karakter
         return const CharacterCreationScreen();
       },
     );

@@ -6,20 +6,14 @@ import '../services/audio_service.dart';
 import '../services/locale_service.dart';
 import '../theme/app_theme.dart';
 
-// --- CUSTOM NAVBAR WIDGET ---
-/// Ini adalah bilah navigasi bawah (Bottom Navigation Bar) buatan sendiri.
-/// Kenapa tidak pakai bawaan Flutter? Karena bawaan Flutter kotak kaku.
-/// Aplikasi ini butuh lekukan dinamis (Bezier Curve) di atas ikon yang sedang aktif.
+// ──────────────────────────────────────────────────────────
+//  CUSTOM RPG NAVBAR  ·  Zero continuous animations
+//  Desain: Flat glass bar + sliding gradient indicator
+// ──────────────────────────────────────────────────────────
 class CustomNavbar extends StatefulWidget {
-  // Menyimpan posisi tab mana yang sedang aktif (0: Home, 1: Daily, 2: Stats, 3: Profile)
   final int currentIndex;
-  
-  // Fungsi yang akan dijalankan ketika salah satu tab diklik
   final Function(int) onTap;
-  
   final VoidCallback? onTaskAdded;
-  
-  // Fungsi yang akan dijalankan ketika tombol tambah (Add) di tengah diklik
   final VoidCallback? onAddPressed;
 
   const CustomNavbar({
@@ -34,187 +28,253 @@ class CustomNavbar extends StatefulWidget {
   State<CustomNavbar> createState() => _CustomNavbarState();
 }
 
-// SingleTickerProviderStateMixin dibutuhkan agar animasi (seperti loncatan ikon) bisa selaras dengan FPS layar
-class _CustomNavbarState extends State<CustomNavbar> with SingleTickerProviderStateMixin {
-  // Mengontrol animasi saat user berpindah tab
-  late AnimationController _ctrl;
+class _CustomNavbarState extends State<CustomNavbar>
+    with SingleTickerProviderStateMixin {
+  // Satu controller — hanya berjalan saat ganti tab, bukan looping
+  AnimationController? _slideCtrl;
+  int _fromIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    // Durasi animasi transisi lekukan adalah 300 milidetik
-    _ctrl = AnimationController(
+    _fromIndex = widget.currentIndex;
+    _slideCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 260),
+      value: 1.0,
     );
-    _ctrl.forward(); // Jalankan animasi
   }
 
   @override
-  void didUpdateWidget(CustomNavbar oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Jika tab aktif berubah, putar ulang animasinya dari awal
-    if (oldWidget.currentIndex != widget.currentIndex) {
-      _ctrl.reset();
-      _ctrl.forward();
+  void didUpdateWidget(CustomNavbar old) {
+    super.didUpdateWidget(old);
+    if (old.currentIndex != widget.currentIndex) {
+      _fromIndex = old.currentIndex;
+      _slideCtrl?.forward(from: 0.0);
     }
   }
 
   @override
   void dispose() {
-    // Matikan controller agar RAM tidak bocor
-    _ctrl.dispose();
+    _slideCtrl?.dispose();
     super.dispose();
   }
 
+  // Data tab: (ikon kosong, ikon penuh, label-getter)
+  List<(IconData, IconData)> get _tabs => [
+        (Icons.home_outlined, Icons.home_rounded),
+        (Icons.checklist_outlined, Icons.checklist_rounded),
+        (Icons.show_chart_rounded, Icons.show_chart_rounded),
+        (Icons.person_outline_rounded, Icons.person_rounded),
+      ];
+
   @override
   Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
-    // Membagi lebar layar menjadi 5 bagian sama rata (karena ada 4 tab + 1 tombol add di tengah)
-    final double itemWidth = size.width / 5;
-    final l = context.lw; // Kamus bahasa
+    final l = context.lw;
+    final labels = [l.navHome, l.navDaily, l.navStats, l.navProfile];
+    final mq = MediaQuery.of(context);
+    // Lebar satu slot (5 slot: tab0, tab1, [add], tab2, tab3)
+    final double slotW = mq.size.width / 5;
 
-    return Container(
-      height: 85, // Tinggi navbar
-      color: Colors.transparent, // Background transparan karena kita akan menggambar canvas kustom
-      child: Stack(
-        // clipBehavior.none membiarkan ikon yang melompat keluar dari batas 85px tidak terpotong
-        clipBehavior: Clip.none,
-        children: [
-          
-          // --- 1. MENGGAMBAR LATAR BELAKANG MELENGKUNG (CANVAS) ---
-          CustomPaint(
-            size: Size(size.width, 85),
-            // _CurvedPainter adalah pelukisnya (kode ada di bagian paling bawah)
-            painter: _CurvedPainter(
-              selectedIndex: widget.currentIndex,
-              itemWidth: itemWidth,
+    // Guard: jika controller belum siap, tampilkan placeholder
+    final ctrl = _slideCtrl;
+    if (ctrl == null) return const SizedBox.shrink();
+
+    return RepaintBoundary(
+      child: Container(
+        height: 72 + mq.padding.bottom,
+        decoration: BoxDecoration(
+          // Theme adaptive background
+          color: AppColors.cardBackground.withValues(alpha: 0.97),
+          border: Border(
+            top: BorderSide(
+              color: AppColors.primary.withValues(alpha: 0.4),
+              width: 1.0,
             ),
           ),
-
-          // --- 2. LINGKARAN IKON AKTIF YANG MELAYANG ---
-          AnimatedPositioned(
-            duration: Duration(milliseconds: 300),
-            curve: Curves.easeOutBack, // Memberikan efek ayunan saat lingkaran berhenti bergeser
-            // _getCircleLeft menghitung secara matematis di mana lingkaran ini harus mendarat
-            left: _getCircleLeft(widget.currentIndex, itemWidth),
-            top: -15, // Ditarik ke atas sedikit agar keluar dari navbar
-            child: Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                // Warna gradient mengikuti tema dinamis (AppColors)
-                gradient: LinearGradient(colors: AppColors.primaryGradient,
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                shape: BoxShape.circle,
-                // Bayangan bersinar (glow) di bawah lingkaran
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.4),
-                    blurRadius: 10,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: Icon(
-                _getIcon(widget.currentIndex), // Mengambil ikon mana yang harus tampil di dalam lingkaran
-                color: AppColors.textOnPrimary, // Menggunakan warna khusus agar tidak tabrakan di tema Komik
-                size: 24,
-              ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.18),
+              blurRadius: 24,
+              offset: const Offset(0, -6),
             ),
-          ),
+          ],
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            // ── Sliding Top Indicator ───────────────────
+            AnimatedBuilder(
+              animation: ctrl,
+              builder: (_, __) {
+                final t = Curves.easeOutCubic.transform(ctrl.value);
+                final fromX = _slotLeft(_fromIndex, slotW);
+                final toX   = _slotLeft(widget.currentIndex, slotW);
+                final x     = fromX + (toX - fromX) * t;
 
-          // --- 3. DERETAN IKON & TEKS NAVBAR ---
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 70,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildItem(0, Icons.home_rounded, l.navHome, itemWidth),
-                _buildItem(1, Icons.check_circle_outline_rounded, l.navDaily, itemWidth),
-                
-                // TOMBOL TAMBAH (Add Button) - Sengaja ditaruh statis di tengah
-                GestureDetector(
-                  onTap: widget.onAddPressed,
-                  child: SizedBox(
-                    width: itemWidth,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                         Icon(Icons.add_box_rounded, color: AppColors.primary, size: 30),
-                         SizedBox(height: 2),
-                         Text(l.isEn ? 'Add' : 'Tambah', style: TextStyle(color: AppColors.primary, fontSize: 9, fontWeight: FontWeight.bold)),
+                return Positioned(
+                  top: 0,
+                  left: x + slotW * 0.15,
+                  child: Container(
+                    width: slotW * 0.70,
+                    height: 2.5,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: AppColors.primaryGradient,
+                      ),
+                      borderRadius: BorderRadius.circular(2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.7),
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                        ),
                       ],
                     ),
                   ),
-                ),
-
-                _buildItem(2, Icons.bar_chart_rounded, l.navStats, itemWidth),
-                _buildItem(3, Icons.person_outline_rounded, l.navProfile, itemWidth),
-              ],
+                );
+              },
             ),
-          ),
-        ],
+
+            // ── Tab Row ─────────────────────────────────
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 72,
+              child: Row(
+                children: [
+                  // Tab 0 & 1
+                  for (int i = 0; i < 2; i++)
+                    _NavTab(
+                      index: i,
+                      activeIndex: widget.currentIndex,
+                      inactiveIcon: _tabs[i].$1,
+                      activeIcon: _tabs[i].$2,
+                      label: labels[i],
+                      width: slotW,
+                      onTap: _onTabTap,
+                    ),
+
+                  // ── Add Button (tengah) ───────────────
+                  SizedBox(
+                    width: slotW,
+                    height: 72,
+                    child: Align(
+                      alignment: const Alignment(0, -0.1),
+                      child: _AddButton(onPressed: widget.onAddPressed),
+                    ),
+                  ),
+
+                  // Tab 2 & 3
+                  for (int i = 2; i < 4; i++)
+                    _NavTab(
+                      index: i,
+                      activeIndex: widget.currentIndex,
+                      inactiveIcon: _tabs[i].$1,
+                      activeIcon: _tabs[i].$2,
+                      label: labels[i],
+                      width: slotW,
+                      onTap: _onTabTap,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // --- LOGIKA KALKULASI POSISI LINGKARAN ---
-  double _getCircleLeft(int index, double width) {
-    // index 0 dan 1 normal. Tapi karena di tengah ada tombol Add,
-    // maka index 2 dan 3 harus digeser posisinya meloncati posisi tombol Add.
-    int pos = index < 2 ? index : index + 1;
-    // Rumus matematika: (Posisi blok * lebar) + setengah lebar blok - setengah lebar lingkaran (25px)
-    return (pos * width) + (width / 2) - 25;
+  // Posisi kiri dari slot (0-based, slot tengah dilewati)
+  double _slotLeft(int tabIndex, double slotW) {
+    final pos = tabIndex < 2 ? tabIndex : tabIndex + 1;
+    return pos * slotW;
   }
 
-  // Mengembalikan ikon yang sesuai berdasarkan index yang aktif
-  IconData _getIcon(int index) {
-    switch (index) {
-      case 0: return Icons.home_rounded;
-      case 1: return Icons.check_circle_outline_rounded;
-      case 2: return Icons.bar_chart_rounded;
-      case 3: return Icons.person_rounded;
-      default: return Icons.home_rounded;
-    }
+  void _onTabTap(int index) {
+    if (index == widget.currentIndex) return;
+    HapticFeedback.lightImpact();
+    AudioService.playClick();
+    widget.onTap(index);
   }
+}
 
-  // Merender satu blok item (Ikon abu-abu dan teks di bawah)
-  Widget _buildItem(int index, IconData icon, String label, double width) {
-    final bool active = widget.currentIndex == index;
+// ──────────────────────────────────────────────────────────
+//  Satu item tab (ikon + label)
+// ──────────────────────────────────────────────────────────
+class _NavTab extends StatelessWidget {
+  final int index;
+  final int activeIndex;
+  final IconData inactiveIcon;
+  final IconData activeIcon;
+  final String label;
+  final double width;
+  final void Function(int) onTap;
+
+  const _NavTab({
+    required this.index,
+    required this.activeIndex,
+    required this.inactiveIcon,
+    required this.activeIcon,
+    required this.label,
+    required this.width,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final active = index == activeIndex;
+
     return GestureDetector(
-      onTap: () {
-        // HapticFeedback = Memberikan efek getaran HP saat ikon ditekan
-        HapticFeedback.lightImpact();
-        // Memutar efek suara klik dari AudioService
-        AudioService.playClick();
-        widget.onTap(index);
-      },
+      onTap: () => onTap(index),
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
         width: width,
+        height: 72,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Jika status aktif, sembunyikan ikon abu-abu ini (karena sudah digantikan oleh lingkaran warna di atas)
-            Opacity(
-              opacity: active ? 0 : 1,
-              child: Icon(icon, color: Colors.grey[500], size: 22),
-            ),
-            SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.nunito(
-                color: active ? AppColors.primary : Colors.grey[500],
-                fontSize: 9,
-                // Jika aktif ditebalkan, jika tidak biasa saja
-                fontWeight: active ? FontWeight.w900 : FontWeight.w600,
+            // ── Ikon dengan background pill ───────────
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOut,
+              width: 40,
+              height: 36,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: active
+                    ? AppColors.primary.withValues(alpha: 0.18)
+                    : Colors.transparent,
+                // Border tipis saat aktif
+                border: active
+                    ? Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.35),
+                        width: 1.0,
+                      )
+                    : null,
               ),
+              child: Icon(
+                active ? activeIcon : inactiveIcon,
+                size: active ? 22 : 20,
+                color: active
+                    ? AppColors.primaryLight
+                    : AppColors.textPrimary.withValues(alpha: 0.30),
+              ),
+            ),
+            const SizedBox(height: 3),
+            // ── Label ──────────────────────────────────
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              style: GoogleFonts.nunito(
+                color: active
+                    ? AppColors.primaryLight
+                    : AppColors.textPrimary.withValues(alpha: 0.28),
+                fontSize: 10,
+                fontWeight: active ? FontWeight.w800 : FontWeight.w500,
+                letterSpacing: active ? 0.3 : 0.0,
+              ),
+              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
           ],
         ),
@@ -223,85 +283,74 @@ class _CustomNavbarState extends State<CustomNavbar> with SingleTickerProviderSt
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// PELUKIS KANVAS (CUSTOM PAINTER) - LOGIKA BEZIER CURVE
-// ═══════════════════════════════════════════════════════════
-class _CurvedPainter extends CustomPainter {
-  final int selectedIndex;
-  final double itemWidth;
-
-  _CurvedPainter({required this.selectedIndex, required this.itemWidth});
+// ──────────────────────────────────────────────────────────
+//  Tombol Add — Crystal/Gem RPG style
+//  TIDAK ada animasi looping, hanya efek tap (scale turun saat ditekan)
+// ──────────────────────────────────────────────────────────
+class _AddButton extends StatefulWidget {
+  final VoidCallback? onPressed;
+  const _AddButton({this.onPressed});
 
   @override
-  void paint(Canvas canvas, Size size) {
-    // Mempersiapkan "Kuas" untuk mewarnai badan Navbar
-    final paint = Paint()
-      ..color = AppColors.cardBackground
-      ..style = PaintingStyle.fill; // Diisi blok warna
+  State<_AddButton> createState() => _AddButtonState();
+}
 
-    // Mempersiapkan Path (Jalur Menggambar)
-    final path = Path();
-    
-    // Menghitung titik tengah dari tab yang sedang diklik
-    int pos = selectedIndex < 2 ? selectedIndex : selectedIndex + 1;
-    double centerX = (pos * itemWidth) + (itemWidth / 2);
+class _AddButtonState extends State<_AddButton> {
+  bool _pressed = false;
 
-    // Mulai menggambar dari kiri atas (titik Y diturunkan 20px)
-    path.moveTo(0, 20); 
-    
-    // Tarik garis lurus sampai mendekati batas ikon yang diklik (dikurangi 45px)
-    path.lineTo(centerX - 45, 20);
-    
-    // Ini kuncinya: MENGGAMBAR LENGKUNGAN MANGKUK (Cubic Bezier)
-    // Parameter: (Titik Kontrol 1 X, Y), (Titik Kontrol 2 X, Y), (Titik Akhir X, Y)
-    path.cubicTo(
-      centerX - 25, 20, 
-      centerX - 25, 55, // Turun sedalam 55px
-      centerX, 55,      // Titik terdalam persis di tengah ikon
-    );
-    // Menggambar lengkungan naik kembali
-    path.cubicTo(
-      centerX + 25, 55, 
-      centerX + 25, 20, 
-      centerX + 45, 20,
-    );
-
-    // Lanjutkan garis lurus ke pojok kanan atas
-    path.lineTo(size.width, 20); 
-    // Tarik ke pojok kanan bawah
-    path.lineTo(size.width, size.height); 
-    // Tarik ke pojok kiri bawah
-    path.lineTo(0, size.height); 
-    // Tutup jalurnya kembali ke titik awal
-    path.close();
-
-    // Gambar bayangan navbar terlebih dahulu
-    canvas.drawShadow(path, AppColors.textPrimary.withValues(alpha: 0.2), 10, true);
-    // Gambar hasil jalur mangkuknya dengan kuas
-    canvas.drawPath(path, paint);
-    
-    // --- MENGGAMBAR GARIS TEPI (BORDER) ---
-    // Diperlukan khususnya untuk Tema Komik agar garis outline hitam/putih terlihat jelas
-    final borderPaint = Paint()
-      ..color = AppColors.textPrimary.withValues(alpha: 0.1) // Jika mode komik, border diset manual di app_theme
-      ..style = PaintingStyle.stroke // Hanya menggambar garis luar (stroke)
-      ..strokeWidth = AppColors.borderWidth;
-    
-    final borderPath = Path();
-    borderPath.moveTo(0, 20);
-    borderPath.lineTo(centerX - 45, 20);
-    borderPath.cubicTo(centerX - 25, 20, centerX - 25, 55, centerX, 55);
-    borderPath.cubicTo(centerX + 25, 55, centerX + 25, 20, centerX + 45, 20);
-    borderPath.lineTo(size.width, 20);
-    
-    // Terapkan kuas garis tepi ke kanvas
-    canvas.drawPath(borderPath, borderPaint);
-  }
-
-  // Fungsi ini dipanggil terus-menerus oleh Flutter. 
-  // Jika index berubah, beritahu Flutter untuk menggambar ulang mangkuknya.
   @override
-  bool shouldRepaint(covariant _CurvedPainter oldDelegate) {
-    return oldDelegate.selectedIndex != selectedIndex;
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        HapticFeedback.mediumImpact();
+        AudioService.playClick();
+        widget.onPressed?.call();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedScale(
+        scale: _pressed ? 0.90 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: AppColors.primaryGradient,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            // Cincin tipis putih
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.22),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.50),
+                blurRadius: 16,
+                spreadRadius: 1,
+                offset: const Offset(0, 4),
+              ),
+              // Inner shimmer (tidak bergerak = tidak lag)
+              BoxShadow(
+                color: Colors.white.withValues(alpha: 0.08),
+                blurRadius: 4,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.add_rounded,
+            color: Colors.white,
+            size: 28,
+          ),
+        ),
+      ),
+    );
   }
 }

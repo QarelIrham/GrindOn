@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
-import 'package:daily_development/screens/character_creation_screen.dart';
+import 'package:daily_development/screens/login_screen.dart';
 import '../services/locale_service.dart';
 import '../l10n/app_locale.dart';
 import '../theme/app_theme.dart';
@@ -55,17 +55,16 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   // Fungsi yang dipanggil ketika user menekan tombol "Skip" atau "Mulai Petualangan"
   Future<void> _finishOnboarding() async {
-    // Menyimpan data ke memori lokal HP bahwa user sudah melihat onboarding
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_seen', true);
     
     if (!mounted) return;
     
-    // Pindah ke layar Pembuatan Karakter dengan efek memudar (FadeTransition)
+    // Setelah onboarding selesai, arahkan ke halaman Login/Register
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const CharacterCreationScreen(),
+        pageBuilder: (_, __, ___) => const LoginScreen(),
         transitionsBuilder: (_, anim, __, child) =>
             FadeTransition(opacity: anim, child: child),
         transitionDuration: const Duration(milliseconds: 800),

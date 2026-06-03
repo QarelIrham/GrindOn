@@ -48,10 +48,10 @@ class AuthService {
       // Ini kunci agar nanti waktu Login, sistem bisa mencari email dari username ini
       await _db.collection('usernames').doc(username.toLowerCase()).set({
         'uid': uid,
-        'email': email, // Email rahasia yang terhubung dengan username ini
+        'email': email,
       });
 
-      return null; // Mengembalikan null berarti SUKSES tanpa error
+      return null;
     } on FirebaseAuthException catch (e) {
       // Penanganan Error Bawaan Firebase
       switch (e.code) {

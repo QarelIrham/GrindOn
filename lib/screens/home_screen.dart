@@ -195,8 +195,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Color _getRankColor(String r) {
     Color color = Color(RankSystem.rankColorHex(r));
-    if ((AppColors.currentTheme == AppThemeType.lightMode || AppColors.currentTheme == AppThemeType.anime) && color == const Color(0xFFFFFFFF)) {
-      return AppColors.primary; // Make SSR visible in light/anime modes
+    if ((AppColors.currentTheme == AppThemeType.lightMode || AppColors.currentTheme == AppThemeType.anime || AppColors.currentTheme == AppThemeType.comicMonochrome) && color == const Color(0xFFFFFFFF)) {
+      return AppColors.primary; // Make SSR visible in light/anime/comic modes
     }
     return color;
   }

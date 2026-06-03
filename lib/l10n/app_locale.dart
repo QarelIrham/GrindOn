@@ -638,63 +638,71 @@ class L {
   //  TUTORIAL STEPS (xqvx The Creator)
   // ════════════════════════════════════════════════════════
   List<String> get tutorialHome => isEn ? [
-    'Greetings, Hero! I am **xqvx The Creator**, your spiritual guide in the RPG Task World. Let me show you how to adventure!',
-    'In the top bar, watch your **HP, XP, Level, and Gold**. Never let your HP reach 0 due to daily mission failures!',
-    'Below that is the **Tavern Quest Board**. Task categories are grouped by physical/mental attributes. Open a category and tap **Accept** to take a mission!',
+    'Greetings, Adventurer! I am xqvx The Creator, your spiritual guide in this realm. Allow me to guide your journey.',
+    'At the top, monitor your vital attributes: HP, XP, Level, and Gold. Should your HP fall to zero due to failed missions, you will suffer a severe penalty!',
+    'Below lies the Tavern Quest Board. Missions are grouped by their respective physical and mental disciplines. Choose your path and accept a quest to begin!',
   ] : [
-    'Salam sejahtera, Hero! Aku adalah **xqvx The Creator**, pemandu spiritualmu di Dunia RPG Task. Mari kupandu caramu berpetualang!',
-    'Di bilah atas, perhatikan status **HP, XP, Level, dan Gold**. Jangan biarkan HP-mu menyentuh angka 0 karena kelalaian misi harian!',
-    'Di bawahnya terdapat **Tavern Quest Board**. Kategori tugas dikelompokkan berdasarkan atribut fisik/mental. Buka kategori dan klik **Accept** untuk mengambil misi!',
+    'Salam, Pahlawan! Aku adalah xqvx The Creator, pemandu spiritualmu di ranah RPG ini. Izinkan aku memandu awal perjalananmu.',
+    'Di bagian atas, pantau atribut vitalmu: HP, XP, Level, dan Gold. Jika HP-mu habis karena misi yang gagal, karaktermu akan menerima penalti berat!',
+    'Di bawahnya adalah Papan Misi Utama. Misi dikelompokkan berdasarkan disiplin fisik dan mental. Pilih jalurmu dan terima quest untuk memulai!',
   ];
 
   List<String> get tutorialDaily => isEn ? [
-    'Welcome to the Quest Room! Here are your active missions you have accepted from the Tavern Board.',
-    'After completing a mission in real life, check the box here to claim your **XP** and **Gold** rewards!',
+    'Welcome to the Active Quest Room. All missions you have accepted from the Tavern will be listed here.',
+    'Once you conquer a mission in the real world, mark it here to claim your rightful XP and Gold bounties.',
   ] : [
-    'Selamat datang di Quest Room! Di sini adalah daftar misi aktifmu yang telah kamu ambil dari Tavern Board.',
-    'Setelah menyelesaikan misi di dunia nyata, centang kotak misinya di sini untuk mengklaim hadiah **XP** dan **Gold** yang melimpah!',
+    'Selamat datang di Ruang Quest Aktif. Semua misi yang telah kamu ambil dari Papan Misi akan tercatat di sini.',
+    'Setelah kamu menaklukkan sebuah misi di dunia nyata, tandai di sini untuk mengklaim hadiah XP dan Gold milikmu.',
   ];
 
   List<String> get tutorialStats => isEn ? [
-    'This is the Hall of Records! Here you can monitor the growth of all five of your main attributes in depth.',
-    'Every completed mission will permanently increase the EXP of your physical/mental attribute based on its category!',
+    'You have entered the Hall of Records. Here, you may analyze the growth of your five core attributes.',
+    'Monitor your Performance Chart to track your XP progress over time, and maintain your Daily Streak to prove your consistency.',
+    'You can also inspect your Quest History log to review past triumphs, or check the Leaderboard tab to compare your rank globally!',
+    'Every successful quest permanently enhances your prowess based on its category, shaping your ultimate title and destiny!',
   ] : [
-    'Ini adalah Hall of Records! Di sini kamu bisa memantau pertumbuhan kelima atribut utamamu secara mendalam.',
-    'Tiap misi yang berhasil diselesaikan akan secara permanen menaikkan EXP atribut fisik/mentalmu sesuai kategorinya!',
+    'Kamu telah memasuki Ruang Catatan Kuno. Di sini, kamu bisa menganalisis pertumbuhan kelima atribut utamamu.',
+    'Pantau Grafik Kinerja untuk melihat laju XP-mu dari waktu ke waktu, dan pertahankan Streak harianmu sebagai bukti ketekunan.',
+    'Kamu juga bisa memeriksa Log Riwayat untuk melihat jejak pencapaian masa lalumu, atau membuka tab Peringkat untuk bersaing secara global!',
+    'Setiap quest yang berhasil akan meningkatkan kekuatanmu secara permanen, membentuk gelar dan takdir akhir karaktermu!',
   ];
 
   List<String> get tutorialProfile => isEn ? [
-    'Welcome to the Arsenal! Here you can spend your hard-earned **Gold** on epic items!',
-    'Items like weapons, armor, and pets (Pets) will grant **permanent Passive Effects** that increase your Max HP or XP Multiplier!',
+    'Welcome to the Grand Arsenal and Dressing Room! Exchange your hard-earned Gold for legendary artifacts and companions.',
+    'You can fully customize your Avatar here with unique outfits, majestic pets, and magnificent backgrounds.',
+    'Do not forget to proudly display your unlocked Badges, showcasing your rarest achievements to the world!',
+    'You may also purchase consumable Potions for instant healing or temporary XP multipliers before embarking on tough quests.',
   ] : [
-    'Selamat datang di Arsenal! Di sini kamu bisa membelanjakan **Gold** hasil jerih payahmu untuk membeli item epik!',
-    'Item seperti senjata, pelindung, dan hewan peliharaan (Pets) akan memberikan **Efek Pasif permanen** yang meningkatkan Max HP atau XP Multiplier karaktermu!',
+    'Selamat datang di Gudang Senjata dan Ruang Ganti! Tukarkan Gold hasil jerih payahmu dengan berbagai artefak legendaris.',
+    'Kamu bisa bebas melakukan kustomisasi Avatar di sini menggunakan kostum unik, hewan pendamping, hingga latar belakang magis.',
+    'Jangan lupa untuk memasang Lencana yang telah kamu raih, pamerkan pencapaian terlangkamu kepada dunia!',
+    'Kamu juga bisa memborong Ramuan ajaib untuk pemulihan instan atau pengganda XP sementara sebelum memulai misi yang berat.',
   ];
 
   List<String> get tutorialAddTask => isEn ? [
-    'This is the **Mission Form**! Here you register new tasks into your Quest Log.',
-    'First, write the **Mission Title** — or select one of the quest ideas available below the title field.',
-    'Choose the **Category** that matches the attribute you want to improve: Strength, Defense, Intelligence, Vitality, or Agility.',
-    'Set your mission **Difficulty**. The higher it is, the more **XP & Gold** you earn upon success!',
-    'Set the **Proof of Completion**: Photo, Text, or none. Then set the deadline and tap **Create Task**. Good luck, Hero! ⚔️',
+    'This is the Quest Creation Scroll. Use it to forge new challenges into your personal log.',
+    'Determine the Quest Title, or select from the ancient scriptures provided below.',
+    'Align your quest with a core discipline: Strength, Defense, Intelligence, Vitality, or Agility.',
+    'Set the Difficulty. A higher peril yields a far greater bounty of XP and Gold upon triumph.',
+    'Select your Proof of Completion, establish a deadline, and forge the quest. May victory be yours!',
   ] : [
-    'Ini adalah **Form Buat Misi**! Di sini kamu mendaftarkan tugas baru ke dalam Quest Log-mu.',
-    'Pertama, tuliskan **Judul Misi** — atau pilih salah satu ide quest yang sudah tersedia di bawah kolom judul.',
-    'Pilih **Kategori** sesuai atribut yang ingin kamu tingkatkan: Strength, Defense, Intelligence, Vitality, atau Agility.',
-    'Atur **Difficulty** misi-mu. Semakin tinggi, semakin besar **XP & Gold** yang kamu dapatkan setelah berhasil!',
-    'Tentukan **Bukti Penyelesaian**: Foto, Teks, atau tanpa bukti. Lalu atur deadline-nya, dan tekan **Buat Task**. Selamat berpetualang, Hero! ⚔️',
+    'Ini adalah Gulungan Penciptaan Quest. Gunakan untuk menempa tantangan baru ke dalam catatan pribadimu.',
+    'Tentukan Judul Quest, atau pilih dari naskah kuno yang tersedia di bagian bawah layar.',
+    'Pilih satu disiplin atribut yang sejalan dengan misimu: Strength, Defense, Intelligence, Vitality, atau Agility.',
+    'Atur tingkat Kesulitan. Tantangan yang lebih berat akan menghasilkan hadiah XP dan Gold yang jauh lebih besar.',
+    'Pilih metode Bukti Penyelesaian, tentukan batas waktu, dan ciptakan quest tersebut. Raihlah kemenanganmu!',
   ];
 
   List<String> get tutorialLeaderboard => isEn ? [
-    'Welcome to the **Hall of Champions**! Here you can see the global ranking of all Heroes fighting in the RPG Task World.',
-    'Your position on this board is determined by your character\'s **Level**. The more missions you complete, the higher your level and rank!',
-    'Watch **#1, #2, #3** — they are the legends! Defeat them by diligently completing your daily and weekly missions.',
-    'The **purple** highlighted row is your own position. Tap another hero\'s name to see their profile and avatar!',
+    'Behold the Hall of Champions! This is the global hierarchy of all adventurers across the realms.',
+    'Your rank is dictated by your Level. Conquer more quests to ascend the ranks and claim glory.',
+    'Observe the highest ranks, for they are legends. Surpass them through sheer discipline and daily perseverance.',
+    'The highlighted row marks your current standing. Select another adventurer to view their profile and arsenal.',
   ] : [
-    'Selamat datang di **Hall of Champions**! Di sini kamu bisa melihat peringkat global seluruh Hero yang bertarung di Dunia RPG Task.',
-    'Posisi di papan ini ditentukan oleh **Level** karaktermu. Semakin banyak misi yang kamu selesaikan, semakin tinggi levelmu dan posisimu!',
-    'Perhatikan **#1, #2, #3** — mereka adalah para legend! Kalahkan mereka dengan rajin menyelesaikan misi harian dan mingguanmu.',
-    'Baris yang disorot **ungu** adalah posisimu sendiri. Ketuk nama hero lain untuk melihat profil dan avatar mereka!',
+    'Saksikanlah Aula Sang Juara! Ini adalah hierarki global seluruh petualang di ranah ini.',
+    'Peringkatmu ditentukan oleh Level karaktermu. Taklukkan lebih banyak quest untuk naik peringkat dan meraih kejayaan.',
+    'Perhatikan petarung di peringkat teratas, mereka adalah legenda. Lampaui mereka melalui kedisiplinan dan ketekunan harianmu.',
+    'Baris yang disorot menandai posisimu saat ini. Pilih petualang lain untuk melihat profil dan persenjataan mereka.',
   ];
 
   // Tutorial UI strings

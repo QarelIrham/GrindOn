@@ -147,8 +147,8 @@ class _StatisticScreenState extends State<StatisticScreen>
 
   Color _rankColor(String rank) {
     Color color = Color(RankSystem.rankColorHex(rank));
-    if ((AppColors.currentTheme == AppThemeType.lightMode || AppColors.currentTheme == AppThemeType.anime) && color == const Color(0xFFFFFFFF)) {
-      return AppColors.primary; // Use primary color for SSR in light/anime mode instead of white
+    if ((AppColors.currentTheme == AppThemeType.lightMode || AppColors.currentTheme == AppThemeType.anime || AppColors.currentTheme == AppThemeType.comicMonochrome) && color == const Color(0xFFFFFFFF)) {
+      return AppColors.primary; // Use primary color for SSR in light/anime/comic mode instead of white
     }
     return color;
   }

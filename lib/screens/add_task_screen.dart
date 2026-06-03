@@ -651,8 +651,8 @@ class _AddTaskSheetState extends State<AddTaskSheet> {
                                 ? l.addTaskDurationNone
                                 : '${_durationMinutes ~/ 60} ${l.isEn ? 'Hours' : 'Jam'} ${_durationMinutes % 60} ${l.isEn ? 'Minutes' : 'Menit'}',
                             style: GoogleFonts.nunito(
-                              color: AppColors.textOnPrimary,
-                            fontSize: 15,
+                              color: _durationMinutes > 0 ? AppColors.primary : AppColors.textPrimary,
+                              fontSize: 15,
                               fontWeight: FontWeight.w800,
                             ),
                           ),

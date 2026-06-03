@@ -257,8 +257,11 @@ class _PerformanceChartState extends State<PerformanceChart> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 12,
             children: [
               Text(
                 l.statsPerformanceXp,
@@ -275,6 +278,7 @@ class _PerformanceChartState extends State<PerformanceChart> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildTab(tab1W, 0),
                     _buildTab(tab1M, 1),
