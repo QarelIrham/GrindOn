@@ -43,6 +43,7 @@ class _AvatarShopViewState extends State<AvatarShopView> {
         _buildCharacterPreview(),
         const SizedBox(height: 16),
         _buildAvatarCategoryTabs(),
+        const SizedBox(height: 12),
         Expanded(child: _buildAvatarInventory()),
       ],
     );
@@ -76,10 +77,11 @@ class _AvatarShopViewState extends State<AvatarShopView> {
     }).toList();
 
     return SizedBox(
-      height: 40,
+      height: 44, // Ditambah sedikit agar tidak terlalu mepet atas-bawah
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        physics: const BouncingScrollPhysics(), // Efek mantul saat di-scroll
+        padding: const EdgeInsets.symmetric(horizontal: 20), // Jarak dari pinggir layar
         itemCount: categories.length,
         itemBuilder: (context, index) {
           final cat = categories[index];
@@ -87,11 +89,11 @@ class _AvatarShopViewState extends State<AvatarShopView> {
           return GestureDetector(
             onTap: () => setState(() => _selectedAvatarCategory = cat),
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              margin: const EdgeInsets.only(right: 12), // Jarak antar tombol diperlebar
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10), // Ruang dalam tombol diperbesar
               decoration: BoxDecoration(
                 color: isSelected ? widget.accentColor.withValues(alpha: 0.2) : widget.cardDark,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: isSelected ? widget.accentColor : widget.cardBorder),
               ),
               alignment: Alignment.center,
@@ -100,16 +102,16 @@ class _AvatarShopViewState extends State<AvatarShopView> {
                 children: [
                   Icon(
                     categoryIcons[cat] ?? Icons.category_rounded,
-                    size: 14,
+                    size: 16, // Icon sedikit lebih besar
                     color: isSelected ? widget.accentColor : AppColors.textPrimary.withValues(alpha: 0.40),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8), // Jarak icon ke teks diperlebar
                   Text(
                     labels[index],
                     style: GoogleFonts.nunito(
                       color: isSelected ? AppColors.textPrimary : AppColors.textPrimary.withValues(alpha: 0.60),
                       fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                      fontSize: 13,
+                      fontSize: 14, // Teks sedikit lebih besar
                     ),
                   ),
                 ],
@@ -123,6 +125,24 @@ class _AvatarShopViewState extends State<AvatarShopView> {
 
   Widget _buildAvatarInventory() {
     final items = AvatarData.allItems.where((e) => e.category == _selectedAvatarCategory).toList();
+    
+    // Sort items: Novice first, Veteran second, Elite third, Mythic last. Then by price (lowest first).
+    items.sort((a, b) {
+      final tierWeight = {
+        AvatarTier.novice: 1,
+        AvatarTier.veteran: 2,
+        AvatarTier.elite: 3,
+        AvatarTier.mythic: 4,
+      };
+      
+      final weightA = tierWeight[a.tier] ?? 0;
+      final weightB = tierWeight[b.tier] ?? 0;
+      
+      if (weightA != weightB) {
+        return weightA.compareTo(weightB); // Lower tier first
+      }
+      return a.price.compareTo(b.price); // Lower price first within same tier
+    });
 
     return GridView.builder(
       padding: const EdgeInsets.all(20),

@@ -179,6 +179,50 @@ class AuthService {
     }
   }
 
+  // ─── Change Email ──────────────────────────────────────────
+  Future<String?> changeEmail(String currentPassword, String newEmail) async {
+    try {
+      final user = currentUser;
+      if (user == null || user.email == null) return 'Tidak ada user login.';
+
+      // Re-authenticate
+      final cred = EmailAuthProvider.credential(email: user.email!, password: currentPassword);
+      await user.reauthenticateWithCredential(cred);
+
+      // Update email di Firebase Auth
+      await user.updateEmail(newEmail);
+
+      final uid = user.uid;
+      final usernameDoc = await _db.collection('users').doc(uid).get();
+      final currentUsername = usernameDoc.data()?[UserSchema.username] as String?;
+
+      // Update email di users collection
+      await _db.collection('users').doc(uid).update({
+        UserSchema.email: newEmail,
+      });
+
+      // Update email di usernames collection
+      if (currentUsername != null) {
+        await _db.collection('usernames').doc(currentUsername.toLowerCase()).update({
+          'email': newEmail,
+        });
+      }
+
+      return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        return 'Password saat ini salah.';
+      } else if (e.code == 'email-already-in-use') {
+        return 'Email baru sudah digunakan oleh akun lain.';
+      } else if (e.code == 'invalid-email') {
+        return 'Format email baru tidak valid.';
+      }
+      return 'Gagal mengganti email: ${e.message}';
+    } catch (e) {
+      return 'Terjadi kesalahan: $e';
+    }
+  }
+
   // ─── Change Password ───────────────────────────────────────
   Future<String?> changePassword(String currentPassword, String newPassword) async {
     try {

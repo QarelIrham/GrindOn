@@ -95,7 +95,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _initNotifications();
     _loadUserData();
+  }
+
+  Future<void> _initNotifications() async {
+    // Meminta izin pop-up notifikasi (wajib untuk Android 13+ dan iOS)
+    await NotificationService().requestPermissions();
   }
 
   Future<void> _loadUserData() async {

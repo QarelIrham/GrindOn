@@ -52,6 +52,40 @@ class _SettingsSheetState extends State<SettingsSheet> {
     _isEmailVerified = FirebaseAuth.instance.currentUser?.emailVerified ?? false;
     _soundEnabled = widget.soundEnabled;
     _musicEnabled = widget.musicEnabled;
+    
+    // Secara otomatis mengecek ulang status verifikasi ke server saat panel dibuka
+    _refreshVerificationStatus();
+  }
+
+  Future<void> _refreshVerificationStatus({bool showMessage = false}) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && !user.emailVerified) {
+      if (showMessage) setState(() => _isLoading = true);
+      try {
+        await user.reload();
+        if (mounted) {
+          final verified = FirebaseAuth.instance.currentUser?.emailVerified ?? false;
+          setState(() {
+            _isEmailVerified = verified;
+            if (showMessage) _isLoading = false;
+          });
+          if (showMessage) {
+            if (verified) {
+              _showSuccess('Hore! Email Anda berhasil diverifikasi!');
+            } else {
+              _showError('Belum diverifikasi. Silakan cek Inbox / Spam email Anda, lalu klik linknya.');
+            }
+          }
+        }
+      } catch (e) {
+        if (mounted && showMessage) {
+          setState(() => _isLoading = false);
+          _showError('Gagal mengecek: $e');
+        }
+      }
+    } else if (user != null && user.emailVerified && showMessage) {
+      _showSuccess('Akun sudah terverifikasi!');
+    }
   }
 
   Future<void> _toggleSound(bool val) async {
@@ -103,10 +137,24 @@ class _SettingsSheetState extends State<SettingsSheet> {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null && !user.emailVerified) {
       try {
+        // Cek lagi ke server barangkali user sebenarnya sudah verifikasi di browser
+        await user.reload();
+        if (FirebaseAuth.instance.currentUser?.emailVerified == true) {
+          setState(() {
+            _isEmailVerified = true;
+          });
+          _showSuccess('Email Anda sudah terverifikasi!');
+          return;
+        }
+
         await user.sendEmailVerification();
-        _showSuccess('Link verifikasi telah dikirim ke email Anda!');
+        _showSuccess('Link verifikasi telah dikirim ke email Anda! Cek Inbox/Spam.');
       } catch (e) {
-        _showError('Gagal mengirim email: $e');
+        if (e.toString().contains('too-many-requests')) {
+          _showError('Mohon tunggu sebentar sebelum meminta email baru lagi.');
+        } else {
+          _showError('Gagal mengirim email: $e');
+        }
       }
     }
   }
@@ -181,6 +229,96 @@ class _SettingsSheetState extends State<SettingsSheet> {
             child: Text('Simpan', style: TextStyle(color: AppColors.textPrimary)),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _editEmail() async {
+    final emailCtrl = TextEditingController();
+    final passCtrl = TextEditingController();
+    
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          bool isDialogLoading = false;
+          String? errorMessage;
+          
+          return AlertDialog(
+            backgroundColor: AppColors.cardBackground,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: AppColors.textPrimary.withValues(alpha: 0.10))),
+            title: Text('Ganti Email', style: GoogleFonts.nunito(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (errorMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.5)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(errorMessage!, style: GoogleFonts.nunito(color: const Color(0xFFEF4444), fontSize: 13, fontWeight: FontWeight.bold))),
+                      ],
+                    ),
+                  ),
+                ],
+                _buildField(controller: emailCtrl, label: 'Email Baru', icon: Icons.email_outlined),
+                const SizedBox(height: 16),
+                _buildField(controller: passCtrl, label: 'Password Saat Ini', icon: Icons.lock_outline, obscure: true),
+                if (isDialogLoading) ...[
+                  const SizedBox(height: 16),
+                  LinearProgressIndicator(color: AppColors.primary, backgroundColor: Colors.transparent),
+                ]
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isDialogLoading ? null : () => Navigator.pop(context), 
+                child: Text('Batal', style: TextStyle(color: AppColors.textPrimary.withValues(alpha: 0.54)))
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                onPressed: isDialogLoading ? null : () async {
+                  if (emailCtrl.text.isEmpty || !emailCtrl.text.contains('@')) {
+                    setStateDialog(() => errorMessage = 'Email tidak valid.');
+                    return;
+                  }
+                  if (passCtrl.text.isEmpty) {
+                    setStateDialog(() => errorMessage = 'Masukkan password saat ini.');
+                    return;
+                  }
+                  
+                  setStateDialog(() {
+                    isDialogLoading = true;
+                    errorMessage = null; 
+                  });
+                  
+                  final err = await _auth.changeEmail(passCtrl.text, emailCtrl.text.trim());
+                  
+                  setStateDialog(() {
+                    isDialogLoading = false;
+                    if (err != null) errorMessage = err;
+                  });
+                  
+                  if (err == null) {
+                    if (context.mounted) Navigator.pop(context);
+                    _showSuccess('Email diganti! Tolong verifikasi ulang email baru Anda.');
+                    _refreshVerificationStatus();
+                    widget.onProfileUpdated();
+                  }
+                },
+                child: Text('Simpan', style: TextStyle(color: AppColors.textPrimary)),
+              ),
+            ],
+          );
+        }
       ),
     );
   }
@@ -372,9 +510,23 @@ class _SettingsSheetState extends State<SettingsSheet> {
                       ),
                     ),
                     if (!_isEmailVerified)
-                      TextButton(
-                        onPressed: _sendVerification,
-                        child: Text(isEn ? 'Verify' : 'Verifikasi', style: GoogleFonts.nunito(color: Color(0xFFF59E0B), fontWeight: FontWeight.bold, fontSize: 13)),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF10B981), size: 22),
+                            onPressed: () => _refreshVerificationStatus(showMessage: true),
+                            tooltip: isEn ? 'Refresh Status' : 'Cek Status',
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: _sendVerification,
+                            style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(50, 30)),
+                            child: Text(isEn ? 'Verify' : 'Kirim Link', style: GoogleFonts.nunito(color: const Color(0xFFF59E0B), fontWeight: FontWeight.bold, fontSize: 13)),
+                          ),
+                        ],
                       ),
                   ],
                 ),
@@ -384,6 +536,7 @@ class _SettingsSheetState extends State<SettingsSheet> {
 
             _buildSettingItem(Icons.person_rounded, isEn ? 'Profile' : 'Profil', widget.currentName, _editProfile),
             _buildSettingItem(Icons.alternate_email_rounded, 'Username', '@${widget.currentUsername}', _editUsername),
+            _buildSettingItem(Icons.email_outlined, 'Email', widget.currentEmail, _editEmail),
             _buildSettingItem(Icons.lock_outline_rounded, isEn ? 'Security' : 'Keamanan', isEn ? 'Change your password' : 'Ganti password Anda', _editPassword),
             _buildSettingItem(Icons.help_outline_rounded, isEn ? 'Reset Tutorial Guide' : 'Reset Panduan Misi', isEn ? 'Replay xqvx The Creator\'s guidance' : 'Tanya ulang panduan xqvx The Creator', _resetTutorial),
             
