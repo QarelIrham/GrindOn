@@ -3,9 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import '../models/app_schema.dart';
 import '../services/audio_service.dart';
+import '../viewmodels/task_viewmodel.dart';
 import 'proof_screen.dart';
 import '../theme/rpg_theme.dart';
 import '../l10n/app_locale.dart';
@@ -92,23 +93,14 @@ class _FocusTimerScreenState extends State<FocusTimerScreen>
 
   // --- LOGIKA MESIN PENGHITUNG WAKTU (TIMER ENGINE) ---
   Future<void> _startTimer() async {
-    // 1. Simpan stempel waktu (timestamp) kapan timer dimulai ke database server
-    // Ini berguna jika user curang dengan menutup aplikasi paksa (Force Close), 
-    // server masih tahu kapan dia sebenarnya mulai.
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.uid)
-        .collection('tasks')
-        .doc(widget.taskId)
-        .update({
-      TaskSchema.timerStatus: TaskSchema.timerRunning,
-      TaskSchema.timerStartAt: FieldValue.serverTimestamp(),
-    });
+    // MVVM: Delegasikan update status timer ke TaskViewModel
+    // TaskViewModel.startTaskTimer() menyimpan timerStatus: running & timerStartAt ke Firestore
+    await context.read<TaskViewModel>().startTaskTimer(widget.taskId);
 
     // AudioService.playClick();
     setState(() => _isRunning = true);
 
-    // 2. Menyalakan Detak Jantung Timer (Ticker)
+    // Menyalakan Detak Jantung Timer (Ticker)
     // Timer.periodic akan mengeksekusi kode di dalamnya secara berulang-ulang setiap 1 detik
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return; // Cegah error jika layar sudah ditutup user
@@ -143,12 +135,8 @@ class _FocusTimerScreenState extends State<FocusTimerScreen>
       _isRunning = false;
     });
 
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.uid)
-        .collection('tasks')
-        .doc(widget.taskId)
-        .update({TaskSchema.timerStatus: TaskSchema.timerCompleted});
+    // MVVM: Delegasikan update timerStatus ke TaskViewModel
+    await context.read<TaskViewModel>().completeTaskTimer(widget.taskId);
 
     if (!mounted) return;
     _goToProof();
@@ -158,12 +146,9 @@ class _FocusTimerScreenState extends State<FocusTimerScreen>
   Future<void> _onNoTimerComplete() async {
     AudioService.playSuccess();
     HapticFeedback.mediumImpact();
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.uid)
-        .collection('tasks')
-        .doc(widget.taskId)
-        .update({TaskSchema.timerStatus: TaskSchema.timerCompleted});
+
+    // MVVM: Delegasikan update timerStatus ke TaskViewModel
+    await context.read<TaskViewModel>().completeTaskTimer(widget.taskId);
 
     if (!mounted) return;
     _goToProof();
@@ -287,28 +272,9 @@ class _FocusTimerScreenState extends State<FocusTimerScreen>
     AudioService.playFail();
     HapticFeedback.heavyImpact();
 
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.uid)
-        .collection('tasks')
-        .doc(widget.taskId)
-        .update({
-      TaskSchema.timerStatus: TaskSchema.timerFailed,
-      TaskSchema.failedAt: FieldValue.serverTimestamp(),
-      TaskSchema.done: false,
-    });
-
-    // Penalti: kurangi HP, Gold, XP, dan reset streak (RBS Rule)
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.uid)
-        .update({
-      UserSchema.hp: FieldValue.increment(-RankSystem.hpLossOnTaskFail),
-      UserSchema.gold: FieldValue.increment(-15),
-      UserSchema.xp: FieldValue.increment(-10), // Penalti XP
-      UserSchema.totalTasksFailed: FieldValue.increment(1),
-      UserSchema.streak: 0, // Streak reset
-    });
+    // MVVM: Delegasikan seluruh penalti (HP, Gold, XP, Streak, Status) ke TaskViewModel
+    // TaskViewModel.failTaskTimer() menangani: timerFailed, failedAt, hp-10, gold-15, xp-10, streak=0, totalTasksFailed+1
+    await context.read<TaskViewModel>().failTaskTimer(widget.taskId);
 
     if (!mounted) return;
     Navigator.pop(context);
