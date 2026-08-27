@@ -4,7 +4,6 @@ import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
-/// KETERANGAN SIDANG:
 /// File ini (firebase_options.dart) TIDAK DIBUAT SECARA MANUAL.
 /// File ini di-generate (dibuat otomatis) oleh perintah `flutterfire configure`.
 /// Fungsinya adalah menyimpan semua API Key rahasia dan ID Aplikasi Firebase

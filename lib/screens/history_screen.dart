@@ -156,7 +156,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       borderColor: AppColors.textPrimary.withValues(alpha: 0.10),
       borderWidth: 1.0,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Header
           Padding(
@@ -189,13 +189,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       if (notes != null && notes.isNotEmpty) ...[
                         SizedBox(height: 4),
                         Text(
                           notes,
                           maxLines: isExpanded ? null : 2,
-                          overflow: isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                          overflow: TextOverflow.clip,
                           style: GoogleFonts.nunito(
                             color: AppColors.textPrimary.withValues(alpha: 0.54),
                             fontSize: 12,
@@ -227,11 +229,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             ),
                           ),
                           SizedBox(width: 8),
-                          Text(
-                            '$timeStr • ${l.catName(cat)}',
-                            style: GoogleFonts.nunito(
-                              color: AppColors.textPrimary.withValues(alpha: 0.54),
-                              fontSize: 11,
+                          Expanded(
+                            child: Text(
+                              '$timeStr • ${l.catName(cat)}',
+                              style: GoogleFonts.nunito(
+                                color: AppColors.textPrimary.withValues(alpha: 0.54),
+                                fontSize: 11,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -239,26 +244,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ],
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '+$xp XP',
-                      style: GoogleFonts.nunito(
-                        color: Color(0xFFF59E0B),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
+                SizedBox(width: 8),
+                Flexible(
+                  flex: 0,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '+$xp XP',
+                        style: GoogleFonts.nunito(
+                          color: Color(0xFFF59E0B),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    Text(
-                      '+$gold Gold',
-                      style: GoogleFonts.nunito(
-                        color: Color(0xFFFFD700),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                      Text(
+                        '+$gold Gold',
+                        style: GoogleFonts.nunito(
+                          color: Color(0xFFFFD700),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -288,6 +298,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   SizedBox(height: 4),
                   Text(
                     proofText,
+                    overflow: TextOverflow.clip,
                     style: GoogleFonts.nunito(
                       color: AppColors.textSecondary,
                       fontSize: 13,

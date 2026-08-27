@@ -789,44 +789,52 @@ class _StatisticScreenState extends State<StatisticScreen>
             color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w700,
           )),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(rankOrder.length, (i) {
-              final rank = rankOrder[i];
-              final isPast = i < currentRankIdx;
-              final isCurrent = i == currentRankIdx;
-              final color = _rankColor(rank);
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const NeverScrollableScrollPhysics(),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(rankOrder.length, (i) {
+                final rank = rankOrder[i];
+                final isPast = i < currentRankIdx;
+                final isCurrent = i == currentRankIdx;
+                final color = _rankColor(rank);
+                final double size = isCurrent ? 36 : 28;
 
-              return Column(
-                children: [
-                  AnimatedContainer(
-                    duration: Duration(milliseconds: 400),
-                    width: isCurrent ? 40 : 32,
-                    height: isCurrent ? 40 : 32,
-                    decoration: BoxDecoration(
-                      color: isPast || isCurrent
-                          ? color.withValues(alpha: 0.2)
-                          : AppColors.textPrimary.withValues(alpha: 0.05),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isCurrent ? color : isPast ? color.withValues(alpha: 0.5) : AppColors.textPrimary.withValues(alpha: 0.12),
-                        width: isCurrent ? 2 : 1,
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: Column(
+                    children: [
+                      AnimatedContainer(
+                        duration: Duration(milliseconds: 400),
+                        width: size,
+                        height: size,
+                        decoration: BoxDecoration(
+                          color: isPast || isCurrent
+                              ? color.withValues(alpha: 0.2)
+                              : AppColors.textPrimary.withValues(alpha: 0.05),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isCurrent ? color : isPast ? color.withValues(alpha: 0.5) : AppColors.textPrimary.withValues(alpha: 0.12),
+                            width: isCurrent ? 2 : 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(rank, style: GoogleFonts.nunito(
+                            color: isCurrent ? color : isPast ? color.withValues(alpha: 0.7) : AppColors.textPrimary.withValues(alpha: 0.24),
+                            fontSize: rank == 'SSR' ? 6 : 9,
+                            fontWeight: isCurrent ? FontWeight.w900 : FontWeight.w600,
+                          )),
+                        ),
                       ),
-                    ),
-                    child: Center(
-                      child: Text(rank, style: GoogleFonts.nunito(
-                        color: isCurrent ? color : isPast ? color.withValues(alpha: 0.7) : AppColors.textPrimary.withValues(alpha: 0.24),
-                        fontSize: rank == 'SSR' ? 7 : 11,
-                        fontWeight: isCurrent ? FontWeight.w900 : FontWeight.w600,
-                      )),
-                    ),
+                      const SizedBox(height: 4),
+                      Text(isCurrent ? context.l.statsKamu : '',
+                          style: GoogleFonts.nunito(color: color, fontSize: 8)),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(isCurrent ? context.l.statsKamu : '',
-                      style: GoogleFonts.nunito(color: color, fontSize: 8)),
-                ],
-              );
-            }),
+                );
+              }),
+            ),
           ),
         ],
       ),
